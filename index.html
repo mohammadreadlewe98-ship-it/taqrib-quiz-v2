@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اختبار مادة تقريب القرآن</title>
+    <!-- 
+      TAQRIB AL-QURAN QUIZ - GOOGLE APPS SCRIPT BACKEND VERSION
+      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel.
+    -->
     <style>
         :root {
             --primary-color: #2c5f2d; /* Calm Islamic Green */
@@ -205,6 +209,19 @@
             flex-wrap: wrap;
         }
 
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
         @media (max-width: 600px) {
             .container {
                 width: 95%;
@@ -218,6 +235,8 @@
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
 
     <header>
         <h1>اختبار مادة تقريب القرآن</h1>
@@ -289,7 +308,7 @@
         </div>
         <div class="admin-actions">
             <button class="btn" onclick="addNewQuestionRow()">إضافة سؤال جديد</button>
-            <button class="btn" onclick="saveQuestionsToLocal()">حفظ الأسئلة الحالية</button>
+            <button class="btn" onclick="saveQuestionsToCloud()">حفظ الأسئلة في الخادم</button>
             <button class="btn" onclick="exportQuestionsJSON()">تصدير الأسئلة (JSON)</button>
             <label class="btn" style="cursor: pointer;">
                 استيراد أسئلة (JSON)
@@ -299,10 +318,10 @@
 
         <hr style="margin: 30px 0;">
         
-        <h2>نتائج الطلاب</h2>
+        <h2>نتائج الطلاب المركزية</h2>
         <div class="admin-actions">
-            <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج إلى Excel (CSV)</button>
-            <button class="btn btn-secondary" onclick="clearResults()" style="background-color: #dc3545;">مسح جميع النتائج</button>
+            <button class="btn" onclick="loadResultsFromCloud()">تحديث النتائج من الخادم</button>
+            <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج الحالية إلى Excel (CSV)</button>
         </div>
         <div style="overflow-x: auto; margin-top: 15px;">
             <table id="results-table">
@@ -326,44 +345,54 @@
     </div>
 
     <script>
-        // --- Data & State ---
-        let questions = [
-            {
-                text: "ما هو أول ما نزل من القرآن الكريم؟",
-                options: ["سورة الفاتحة", "سورة الإخلاص", "سورة العلق (اقرأ)", "سورة البقرة"],
-                correct: "C"
-            }
-        ];
-
-        let results = []; // This array will store student attempts in memory
+        // --- Global Configuration ---
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJW1Q_IrEgFhEkvG5leEqXTCiQ5rntbbg0Ar7TcX6j5PqSSgwhL_VPRNl0S7HNfawg0A/exec";
         const ADMIN_PASSWORD = "98989898";
+
+        // --- Data & State ---
+        let questions = [];
+        let results = [];
         
         // Timer Variables
         let timerInterval;
-        let timeLeft = 30 * 60; // 30 minutes in seconds
+        let timeLeft = 30 * 60; 
         let startTimeStr = "";
         let currentStudentName = "";
         let isSubmitted = false;
 
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
-            // Load questions from localStorage
-            const savedQuestions = localStorage.getItem('taqrib_questions');
-            if (savedQuestions) {
-                try { questions = JSON.parse(savedQuestions); } catch(e) { console.error("Error loading questions", e); }
-            }
-
-            // Load results from localStorage
-            const savedResults = localStorage.getItem('taqrib_results');
-            if (savedResults) {
-                try { 
-                    results = JSON.parse(savedResults); 
-                    console.log("Loaded results:", results);
-                } catch(e) { console.error("Error loading results", e); }
-            }
-            
-            renderAdminResults();
+            loadQuestionsFromCloud();
         });
+
+        // --- Loading Overlay Helper ---
+        function toggleLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (show) overlay.classList.remove('hidden');
+            else overlay.classList.add('hidden');
+        }
+
+        // --- Cloud Integration: Load Questions ---
+        function loadQuestionsFromCloud() {
+            toggleLoading(true);
+            fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.questions) {
+                        questions = data.questions;
+                        console.log("Questions loaded from cloud:", questions);
+                    } else {
+                        throw new Error("Failed to load questions");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading questions:", error);
+                    alert("تعذر تحميل الأسئلة من الخادم، يرجى مراجعة المعلم.");
+                })
+                .finally(() => {
+                    toggleLoading(false);
+                });
+        }
 
         // --- Navigation ---
         function hideAllPages() {
@@ -423,24 +452,17 @@
         function startTimer() {
             const display = document.getElementById('time-display');
             const timerContainer = document.getElementById('quiz-timer');
-            
-            // Clear any existing timer first
             if (timerInterval) clearInterval(timerInterval);
 
             timerInterval = setInterval(() => {
                 timeLeft--;
-                
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
                 display.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
-
-                if (timeLeft <= 300) { // Last 5 minutes warning
-                    timerContainer.classList.add('timer-warning');
-                }
-
+                if (timeLeft <= 300) timerContainer.classList.add('timer-warning');
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    submitQuiz(true); // Auto-submit when time is up
+                    submitQuiz(true);
                 }
             }, 1000);
         }
@@ -448,11 +470,9 @@
         function renderQuiz() {
             const container = document.getElementById('questions-container');
             container.innerHTML = '';
-
             questions.forEach((q, index) => {
                 const qDiv = document.createElement('div');
                 qDiv.className = 'question-card';
-                
                 let optionsHTML = '';
                 const labels = ['A', 'B', 'C', 'D'];
                 q.options.forEach((opt, i) => {
@@ -463,13 +483,7 @@
                         </label>
                     `;
                 });
-
-                qDiv.innerHTML = `
-                    <p><strong>سؤال ${index + 1}:</strong> ${q.text}</p>
-                    <div class="options-container">
-                        ${optionsHTML}
-                    </div>
-                `;
+                qDiv.innerHTML = `<p><strong>سؤال ${index + 1}:</strong> ${q.text}</p><div class="options-container">${optionsHTML}</div>`;
                 container.appendChild(qDiv);
             });
         }
@@ -484,23 +498,15 @@
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
             isSubmitted = true;
-            
-            // Stop the timer immediately
             if (timerInterval) clearInterval(timerInterval);
-            
             const endTimeStr = getTimestamp();
             let correctCount = 0;
             const totalQuestions = questions.length;
-
-            // Calculate score
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                if (selected && selected.value === questions[i].correct) {
-                    correctCount++;
-                }
+                if (selected && selected.value === questions[i].correct) correctCount++;
             }
 
-            // Create result record
             const resultEntry = {
                 name: currentStudentName,
                 total: totalQuestions,
@@ -510,22 +516,19 @@
                 endTime: endTimeStr
             };
 
-            // PUSH result to array and SAVE to localStorage
-            results.push(resultEntry);
-            localStorage.setItem('taqrib_results', JSON.stringify(results));
-            
-            // Refresh admin results view
-            renderAdminResults();
+            // Cloud Integration: Submit Result (Fire-and-forget)
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: 'no-cors', // To avoid CORS issues with fire-and-forget
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "submitResult", result: resultEntry })
+            }).catch(e => console.error("Error submitting result:", e));
 
-            // Lock UI
             lockQuiz();
-
-            // Show Completion Message
             setTimeout(() => {
                 hideAllPages();
                 const status = document.getElementById('completion-status');
                 const msg = document.getElementById('completion-msg');
-                
                 if (isAuto) {
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
@@ -535,7 +538,6 @@
                     status.style.color = "var(--primary-color)";
                     msg.textContent = "شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.";
                 }
-                
                 document.getElementById('completion-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
             }, 800);
@@ -548,7 +550,7 @@
                 hideAllPages();
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 renderAdminQuestions();
-                renderAdminResults(); // Ensure results are up to date when entering admin
+                loadResultsFromCloud();
                 document.getElementById('admin-password').value = '';
             } else {
                 alert("كلمة المرور غير صحيحة!");
@@ -558,9 +560,7 @@
         function renderAdminQuestions() {
             const tbody = document.getElementById('admin-questions-body');
             tbody.innerHTML = '';
-            questions.forEach((q, index) => {
-                addQuestionRow(q, index);
-            });
+            questions.forEach((q, index) => addQuestionRow(q, index));
         }
 
         function addQuestionRow(q = {text: '', options: ['', '', '', ''], correct: 'A'}, index = null) {
@@ -587,7 +587,8 @@
 
         function addNewQuestionRow() { addQuestionRow(); }
 
-        function saveQuestionsToLocal() {
+        // --- Cloud Integration: Save Questions ---
+        function saveQuestionsToCloud() {
             const rows = document.querySelectorAll('#admin-questions-body tr');
             const newQuestions = [];
             rows.forEach(row => {
@@ -596,13 +597,58 @@
                 const correct = row.querySelector('.q-correct').value;
                 if (text !== "") newQuestions.push({ text, options: opts, correct });
             });
-            questions = newQuestions;
-            localStorage.setItem('taqrib_questions', JSON.stringify(questions));
-            alert("تم حفظ الأسئلة بنجاح في ذاكرة المتصفح.");
+
+            toggleLoading(true);
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "saveQuestions", questions: newQuestions })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    questions = newQuestions;
+                    alert("تم حفظ الأسئلة بنجاح في الخادم.");
+                } else {
+                    throw new Error("Save failed");
+                }
+            })
+            .catch(error => {
+                console.error("Error saving questions:", error);
+                alert("حدث خطأ أثناء حفظ الأسئلة، حاول مرة أخرى.");
+            })
+            .finally(() => {
+                toggleLoading(false);
+            });
+        }
+
+        // --- Cloud Integration: Load Results ---
+        function loadResultsFromCloud() {
+            toggleLoading(true);
+            fetch(`${GOOGLE_SCRIPT_URL}?action=getResults`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.results) {
+                        results = data.results;
+                        renderAdminResults();
+                    }
+                })
+                .catch(error => console.error("Error loading results:", error))
+                .finally(() => toggleLoading(false));
+        }
+
+        function renderAdminResults() {
+            const tbody = document.getElementById('results-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            results.forEach(res => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${res.name}</td><td>${res.total}</td><td>${res.correct}</td><td>${res.score}%</td><td>${res.startTime}</td><td>${res.endTime}</td>`;
+                tbody.appendChild(row);
+            });
         }
 
         function exportQuestionsJSON() {
-            saveQuestionsToLocal();
             const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -619,9 +665,8 @@
                     const imported = JSON.parse(e.target.result);
                     if (Array.isArray(imported)) {
                         questions = imported;
-                        localStorage.setItem('taqrib_questions', JSON.stringify(questions));
                         renderAdminQuestions();
-                        alert("تم استيراد الأسئلة بنجاح.");
+                        alert("تم استيراد الأسئلة محلياً. يرجى الضغط على 'حفظ الأسئلة في الخادم' لاعتمادها.");
                     }
                 } catch (err) { alert("خطأ في قراءة الملف."); }
             };
@@ -629,58 +674,18 @@
             event.target.value = '';
         }
 
-        // --- Results Management ---
-        function renderAdminResults() {
-            const tbody = document.getElementById('results-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            results.forEach(res => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${res.name}</td>
-                    <td>${res.total}</td>
-                    <td>${res.correct}</td>
-                    <td>${res.score}%</td>
-                    <td>${res.startTime}</td>
-                    <td>${res.endTime}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function clearResults() {
-            if (confirm("هل أنت متأكد من مسح جميع النتائج المسجلة؟ لا يمكن التراجع عن هذا الإجراء.")) {
-                results = [];
-                localStorage.removeItem('taqrib_results');
-                renderAdminResults();
-            }
-        }
-
-        // --- CSV Export Logic ---
         function exportResultsToCSV() {
-            if (results.length === 0) { 
-                alert("لا توجد نتائج مسجلة لتصديرها حالياً."); 
-                return; 
-            }
-
-            // Standard CSV build with UTF-8 BOM for Excel
-            let csvContent = "\uFEFFsep=,\n"; 
-            csvContent += "اسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
-            
-            // Iterate over results array and add one row per attempt
+            if (results.length === 0) { alert("لا توجد نتائج مسجلة."); return; }
+            let csvContent = "\uFEFFsep=,\nاسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
             results.forEach(res => {
                 const name = (res.name || "").replace(/,/g, '');
                 csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = url; 
-            link.download = "taqrib_quiz_results.csv";
-            document.body.appendChild(link); 
-            link.click(); 
-            document.body.removeChild(link);
+            link.href = url; link.download = "taqrib_quiz_results.csv";
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
     </script>
