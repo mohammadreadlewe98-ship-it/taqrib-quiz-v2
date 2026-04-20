@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>اختبار مادة تقريب القرآن</title>
-    <!-- 
-      TAQRIB AL-QURAN QUIZ - UPDATED VERSION
-      Features: 30-minute timer, Auto-submit, Input Locking, Start/End Time Tracking, CSV Export for Excel.
-    -->
     <style>
         :root {
             --primary-color: #2c5f2d; /* Calm Islamic Green */
@@ -339,7 +335,7 @@
             }
         ];
 
-        let results = [];
+        let results = []; // This array will store student attempts in memory
         const ADMIN_PASSWORD = "98989898";
         
         // Timer Variables
@@ -351,14 +347,19 @@
 
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Load questions from localStorage
             const savedQuestions = localStorage.getItem('taqrib_questions');
             if (savedQuestions) {
-                try { questions = JSON.parse(savedQuestions); } catch(e) {}
+                try { questions = JSON.parse(savedQuestions); } catch(e) { console.error("Error loading questions", e); }
             }
 
+            // Load results from localStorage
             const savedResults = localStorage.getItem('taqrib_results');
             if (savedResults) {
-                try { results = JSON.parse(savedResults); } catch(e) {}
+                try { 
+                    results = JSON.parse(savedResults); 
+                    console.log("Loaded results:", results);
+                } catch(e) { console.error("Error loading results", e); }
             }
             
             renderAdminResults();
@@ -403,7 +404,7 @@
             }
 
             if (questions.length === 0) {
-                alert("لا توجد أسئلة حالياً.");
+                alert("لا توجد أسئلة حالياً. يرجى مراجعة المعلم.");
                 return;
             }
 
@@ -423,6 +424,9 @@
             const display = document.getElementById('time-display');
             const timerContainer = document.getElementById('quiz-timer');
             
+            // Clear any existing timer first
+            if (timerInterval) clearInterval(timerInterval);
+
             timerInterval = setInterval(() => {
                 timeLeft--;
                 
@@ -430,13 +434,13 @@
                 const seconds = timeLeft % 60;
                 display.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
 
-                if (timeLeft <= 300) { // Last 5 minutes
+                if (timeLeft <= 300) { // Last 5 minutes warning
                     timerContainer.classList.add('timer-warning');
                 }
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    submitQuiz(true); // Auto-submit
+                    submitQuiz(true); // Auto-submit when time is up
                 }
             }, 1000);
         }
@@ -481,12 +485,14 @@
             if (isSubmitted) return;
             isSubmitted = true;
             
-            clearInterval(timerInterval);
-            const endTimeStr = getTimestamp();
+            // Stop the timer immediately
+            if (timerInterval) clearInterval(timerInterval);
             
+            const endTimeStr = getTimestamp();
             let correctCount = 0;
             const totalQuestions = questions.length;
 
+            // Calculate score
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
                 if (selected && selected.value === questions[i].correct) {
@@ -494,24 +500,27 @@
                 }
             }
 
-            // Record Result
+            // Create result record
             const resultEntry = {
                 name: currentStudentName,
                 total: totalQuestions,
                 correct: correctCount,
-                score: ((correctCount / totalQuestions) * 100).toFixed(2),
+                score: totalQuestions > 0 ? ((correctCount / totalQuestions) * 100).toFixed(2) : "0.00",
                 startTime: startTimeStr,
                 endTime: endTimeStr
             };
 
+            // PUSH result to array and SAVE to localStorage
             results.push(resultEntry);
             localStorage.setItem('taqrib_results', JSON.stringify(results));
+            
+            // Refresh admin results view
             renderAdminResults();
 
             // Lock UI
             lockQuiz();
 
-            // Show Completion
+            // Show Completion Message
             setTimeout(() => {
                 hideAllPages();
                 const status = document.getElementById('completion-status');
@@ -520,16 +529,16 @@
                 if (isAuto) {
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
-                    msg.textContent = "تم إغلاق الاختبار وإرسال إجاباتك الحالية.";
+                    msg.textContent = "تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.";
                 } else {
                     status.textContent = "تم إرسال إجاباتك بنجاح";
                     status.style.color = "var(--primary-color)";
-                    msg.textContent = "شكرًا لك، تم تسجيل إجاباتك بنجاح.";
+                    msg.textContent = "شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.";
                 }
                 
                 document.getElementById('completion-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
-            }, 1000);
+            }, 800);
         }
 
         // --- Admin Logic ---
@@ -539,6 +548,7 @@
                 hideAllPages();
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 renderAdminQuestions();
+                renderAdminResults(); // Ensure results are up to date when entering admin
                 document.getElementById('admin-password').value = '';
             } else {
                 alert("كلمة المرور غير صحيحة!");
@@ -588,7 +598,7 @@
             });
             questions = newQuestions;
             localStorage.setItem('taqrib_questions', JSON.stringify(questions));
-            alert("تم حفظ الأسئلة بنجاح.");
+            alert("تم حفظ الأسئلة بنجاح في ذاكرة المتصفح.");
         }
 
         function exportQuestionsJSON() {
@@ -622,6 +632,7 @@
         // --- Results Management ---
         function renderAdminResults() {
             const tbody = document.getElementById('results-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
             results.forEach(res => {
                 const row = document.createElement('tr');
@@ -638,26 +649,39 @@
         }
 
         function clearResults() {
-            if (confirm("هل أنت متأكد من مسح جميع النتائج؟")) {
+            if (confirm("هل أنت متأكد من مسح جميع النتائج المسجلة؟ لا يمكن التراجع عن هذا الإجراء.")) {
                 results = [];
                 localStorage.removeItem('taqrib_results');
                 renderAdminResults();
             }
         }
 
+        // --- CSV Export Logic ---
         function exportResultsToCSV() {
-            if (results.length === 0) { alert("لا توجد نتائج."); return; }
+            if (results.length === 0) { 
+                alert("لا توجد نتائج مسجلة لتصديرها حالياً."); 
+                return; 
+            }
+
+            // Standard CSV build with UTF-8 BOM for Excel
             let csvContent = "\uFEFFsep=,\n"; 
             csvContent += "اسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
+            
+            // Iterate over results array and add one row per attempt
             results.forEach(res => {
-                const name = res.name.replace(/,/g, '');
+                const name = (res.name || "").replace(/,/g, '');
                 csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
             });
+
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = url; link.download = "taqrib_quiz_results.csv";
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            link.href = url; 
+            link.download = "taqrib_quiz_results.csv";
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
