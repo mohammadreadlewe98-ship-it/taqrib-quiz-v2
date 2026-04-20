@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار مادة تقريب القرآن</title>
+    <!-- 
+      TAQRIB AL-QURAN QUIZ - UPDATED VERSION
+      Features: 30-minute timer, Auto-submit, Input Locking, Start/End Time Tracking, CSV Export for Excel.
+    -->
+    <style>
+        :root {
+            --primary-color: #2c5f2d; /* Calm Islamic Green */
+            --secondary-color: #97bc62;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --white: #ffffff;
+            --accent-color: #d4af37; /* Gold accent */
+            --error-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: var(--white);
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--accent-color);
+        }
+
+        .timer-container {
+            position: sticky;
+            top: 10px;
+            background: var(--white);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .timer-warning {
+            color: var(--error-color);
+            border-color: var(--error-color);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #1e421e;
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-admin {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 12px;
+            padding: 5px 10px;
+            opacity: 0.7;
+        }
+
+        .question-card {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-label:hover:not(.locked) {
+            background: #f0f0f0;
+            border-color: var(--primary-color);
+        }
+
+        .option-label.locked {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        .option-label input {
+            margin-left: 10px;
+            transform: scale(1.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .admin-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+            .btn-admin {
+                top: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>اختبار مادة تقريب القرآن</h1>
+        <button class="btn btn-admin" onclick="showAdminLogin()">لوحة المعلم</button>
+    </header>
+
+    <!-- Student Initial Info Page -->
+    <div id="student-info-page" class="container">
+        <h2>بيانات الطالب</h2>
+        <div class="form-group">
+            <label for="student-name">اسم الطالب رباعي:</label>
+            <input type="text" id="student-name" placeholder="أدخل اسمك هنا">
+        </div>
+        <button class="btn" onclick="startQuiz()">ابدأ الاختبار</button>
+    </div>
+
+    <!-- Quiz Page -->
+    <div id="quiz-page" class="container hidden">
+        <div id="quiz-timer" class="timer-container">
+            الوقت المتبقي: <span id="time-display">30:00</span>
+        </div>
+        <h2 id="quiz-title">الأسئلة</h2>
+        <div id="questions-container">
+            <!-- Questions will be loaded here via JS -->
+        </div>
+        <button id="submit-btn" class="btn" onclick="submitQuiz(false)">إنهاء الاختبار وإرسال الإجابات</button>
+    </div>
+
+    <!-- Completion Message -->
+    <div id="completion-page" class="container hidden">
+        <div style="text-align: center;">
+            <h2 id="completion-status" style="color: var(--primary-color);">تم إرسال إجاباتك بنجاح</h2>
+            <p id="completion-msg">شكرًا لك، تم تسجيل إجاباتك بنجاح. يمكنك إغلاق هذه الصفحة الآن.</p>
+            <button class="btn btn-secondary" onclick="location.reload()">العودة للرئيسية</button>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="admin-login-page" class="container hidden">
+        <h2>دخول المعلم</h2>
+        <div class="form-group">
+            <label for="admin-password">كلمة المرور:</label>
+            <input type="password" id="admin-password">
+        </div>
+        <button class="btn" onclick="checkAdminPassword()">دخول</button>
+        <button class="btn btn-secondary" onclick="showStudentPage()">رجوع</button>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="container hidden" style="max-width: 1000px;">
+        <h2>إدارة الأسئلة</h2>
+        <div style="overflow-x: auto;">
+            <table id="questions-table">
+                <thead>
+                    <tr>
+                        <th>السؤال</th>
+                        <th>أ</th>
+                        <th>ب</th>
+                        <th>ج</th>
+                        <th>د</th>
+                        <th>الإجابة</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-questions-body">
+                    <!-- Questions for editing -->
+                </tbody>
+            </table>
+        </div>
+        <div class="admin-actions">
+            <button class="btn" onclick="addNewQuestionRow()">إضافة سؤال جديد</button>
+            <button class="btn" onclick="saveQuestionsToLocal()">حفظ الأسئلة الحالية</button>
+            <button class="btn" onclick="exportQuestionsJSON()">تصدير الأسئلة (JSON)</button>
+            <label class="btn" style="cursor: pointer;">
+                استيراد أسئلة (JSON)
+                <input type="file" id="import-json" style="display:none" accept=".json" onchange="importQuestionsJSON(event)">
+            </label>
+        </div>
+
+        <hr style="margin: 30px 0;">
+        
+        <h2>نتائج الطلاب</h2>
+        <div class="admin-actions">
+            <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج إلى Excel (CSV)</button>
+            <button class="btn btn-secondary" onclick="clearResults()" style="background-color: #dc3545;">مسح جميع النتائج</button>
+        </div>
+        <div style="overflow-x: auto; margin-top: 15px;">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>الأسئلة</th>
+                        <th>الصح</th>
+                        <th>الدرجة</th>
+                        <th>وقت البدء</th>
+                        <th>وقت الانتهاء</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Results will appear here -->
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <button class="btn btn-secondary" onclick="showStudentPage()">الخروج من لوحة المعلم</button>
+    </div>
+
+    <script>
+        // --- Data & State ---
+        let questions = [
+            {
+                text: "ما هو أول ما نزل من القرآن الكريم؟",
+                options: ["سورة الفاتحة", "سورة الإخلاص", "سورة العلق (اقرأ)", "سورة البقرة"],
+                correct: "C"
+            }
+        ];
+
+        let results = [];
+        const ADMIN_PASSWORD = "98989898";
+        
+        // Timer Variables
+        let timerInterval;
+        let timeLeft = 30 * 60; // 30 minutes in seconds
+        let startTimeStr = "";
+        let currentStudentName = "";
+        let isSubmitted = false;
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedQuestions = localStorage.getItem('taqrib_questions');
+            if (savedQuestions) {
+                try { questions = JSON.parse(savedQuestions); } catch(e) {}
+            }
+
+            const savedResults = localStorage.getItem('taqrib_results');
+            if (savedResults) {
+                try { results = JSON.parse(savedResults); } catch(e) {}
+            }
+            
+            renderAdminResults();
+        });
+
+        // --- Navigation ---
+        function hideAllPages() {
+            ['student-info-page', 'quiz-page', 'completion-page', 'admin-login-page', 'admin-dashboard']
+                .forEach(id => document.getElementById(id).classList.add('hidden'));
+        }
+
+        function showStudentPage() {
+            hideAllPages();
+            document.getElementById('student-info-page').classList.remove('hidden');
+        }
+
+        function showAdminLogin() {
+            hideAllPages();
+            document.getElementById('admin-login-page').classList.remove('hidden');
+        }
+
+        // --- Helper: Format Timestamp ---
+        function getTimestamp() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const h = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${d} ${h}:${min}:${s}`;
+        }
+
+        // --- Student Logic ---
+        function startQuiz() {
+            const nameInput = document.getElementById('student-name');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert("يرجى إدخال اسم الطالب أولاً.");
+                return;
+            }
+
+            if (questions.length === 0) {
+                alert("لا توجد أسئلة حالياً.");
+                return;
+            }
+
+            currentStudentName = name;
+            startTimeStr = getTimestamp();
+            isSubmitted = false;
+            timeLeft = 30 * 60;
+            
+            hideAllPages();
+            document.getElementById('quiz-page').classList.remove('hidden');
+            renderQuiz();
+            startTimer();
+            window.scrollTo(0, 0);
+        }
+
+        function startTimer() {
+            const display = document.getElementById('time-display');
+            const timerContainer = document.getElementById('quiz-timer');
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                display.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+                if (timeLeft <= 300) { // Last 5 minutes
+                    timerContainer.classList.add('timer-warning');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz(true); // Auto-submit
+                }
+            }, 1000);
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'question-card';
+                
+                let optionsHTML = '';
+                const labels = ['A', 'B', 'C', 'D'];
+                q.options.forEach((opt, i) => {
+                    optionsHTML += `
+                        <label class="option-label">
+                            <input type="radio" name="q${index}" value="${labels[i]}">
+                            <span style="margin-right: 5px;">${labels[i]}: ${opt}</span>
+                        </label>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <p><strong>سؤال ${index + 1}:</strong> ${q.text}</p>
+                    <div class="options-container">
+                        ${optionsHTML}
+                    </div>
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        function lockQuiz() {
+            const inputs = document.querySelectorAll('#quiz-page input, #quiz-page button');
+            inputs.forEach(input => input.disabled = true);
+            const labels = document.querySelectorAll('.option-label');
+            labels.forEach(label => label.classList.add('locked'));
+        }
+
+        function submitQuiz(isAuto) {
+            if (isSubmitted) return;
+            isSubmitted = true;
+            
+            clearInterval(timerInterval);
+            const endTimeStr = getTimestamp();
+            
+            let correctCount = 0;
+            const totalQuestions = questions.length;
+
+            for (let i = 0; i < totalQuestions; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selected && selected.value === questions[i].correct) {
+                    correctCount++;
+                }
+            }
+
+            // Record Result
+            const resultEntry = {
+                name: currentStudentName,
+                total: totalQuestions,
+                correct: correctCount,
+                score: ((correctCount / totalQuestions) * 100).toFixed(2),
+                startTime: startTimeStr,
+                endTime: endTimeStr
+            };
+
+            results.push(resultEntry);
+            localStorage.setItem('taqrib_results', JSON.stringify(results));
+            renderAdminResults();
+
+            // Lock UI
+            lockQuiz();
+
+            // Show Completion
+            setTimeout(() => {
+                hideAllPages();
+                const status = document.getElementById('completion-status');
+                const msg = document.getElementById('completion-msg');
+                
+                if (isAuto) {
+                    status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
+                    status.style.color = "var(--error-color)";
+                    msg.textContent = "تم إغلاق الاختبار وإرسال إجاباتك الحالية.";
+                } else {
+                    status.textContent = "تم إرسال إجاباتك بنجاح";
+                    status.style.color = "var(--primary-color)";
+                    msg.textContent = "شكرًا لك، تم تسجيل إجاباتك بنجاح.";
+                }
+                
+                document.getElementById('completion-page').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }, 1000);
+        }
+
+        // --- Admin Logic ---
+        function checkAdminPassword() {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === ADMIN_PASSWORD) {
+                hideAllPages();
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                renderAdminQuestions();
+                document.getElementById('admin-password').value = '';
+            } else {
+                alert("كلمة المرور غير صحيحة!");
+            }
+        }
+
+        function renderAdminQuestions() {
+            const tbody = document.getElementById('admin-questions-body');
+            tbody.innerHTML = '';
+            questions.forEach((q, index) => {
+                addQuestionRow(q, index);
+            });
+        }
+
+        function addQuestionRow(q = {text: '', options: ['', '', '', ''], correct: 'A'}, index = null) {
+            const tbody = document.getElementById('admin-questions-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><textarea class="q-text" rows="2">${q.text}</textarea></td>
+                <td><input type="text" class="q-opt" value="${q.options[0]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[1]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[2]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[3]}"></td>
+                <td>
+                    <select class="q-correct">
+                        <option value="A" ${q.correct === 'A' ? 'selected' : ''}>أ</option>
+                        <option value="B" ${q.correct === 'B' ? 'selected' : ''}>ب</option>
+                        <option value="C" ${q.correct === 'C' ? 'selected' : ''}>ج</option>
+                        <option value="D" ${q.correct === 'D' ? 'selected' : ''}>د</option>
+                    </select>
+                </td>
+                <td><button class="btn" style="background-color:#dc3545; padding: 5px 10px;" onclick="this.parentElement.parentElement.remove()">حذف</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function addNewQuestionRow() { addQuestionRow(); }
+
+        function saveQuestionsToLocal() {
+            const rows = document.querySelectorAll('#admin-questions-body tr');
+            const newQuestions = [];
+            rows.forEach(row => {
+                const text = row.querySelector('.q-text').value.trim();
+                const opts = Array.from(row.querySelectorAll('.q-opt')).map(input => input.value.trim());
+                const correct = row.querySelector('.q-correct').value;
+                if (text !== "") newQuestions.push({ text, options: opts, correct });
+            });
+            questions = newQuestions;
+            localStorage.setItem('taqrib_questions', JSON.stringify(questions));
+            alert("تم حفظ الأسئلة بنجاح.");
+        }
+
+        function exportQuestionsJSON() {
+            saveQuestionsToLocal();
+            const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url; link.download = "taqrib_questions.json";
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function importQuestionsJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        questions = imported;
+                        localStorage.setItem('taqrib_questions', JSON.stringify(questions));
+                        renderAdminQuestions();
+                        alert("تم استيراد الأسئلة بنجاح.");
+                    }
+                } catch (err) { alert("خطأ في قراءة الملف."); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // --- Results Management ---
+        function renderAdminResults() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+            results.forEach(res => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${res.name}</td>
+                    <td>${res.total}</td>
+                    <td>${res.correct}</td>
+                    <td>${res.score}%</td>
+                    <td>${res.startTime}</td>
+                    <td>${res.endTime}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function clearResults() {
+            if (confirm("هل أنت متأكد من مسح جميع النتائج؟")) {
+                results = [];
+                localStorage.removeItem('taqrib_results');
+                renderAdminResults();
+            }
+        }
+
+        function exportResultsToCSV() {
+            if (results.length === 0) { alert("لا توجد نتائج."); return; }
+            let csvContent = "\uFEFFsep=,\n"; 
+            csvContent += "اسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
+            results.forEach(res => {
+                const name = res.name.replace(/,/g, '');
+                csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url; link.download = "taqrib_quiz_results.csv";
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
