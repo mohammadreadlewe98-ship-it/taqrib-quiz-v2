@@ -495,13 +495,17 @@
             labels.forEach(label => label.classList.add('locked'));
         }
 
+        // --- Student: Submit Quiz (with showing score) ---
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
             isSubmitted = true;
             if (timerInterval) clearInterval(timerInterval);
+
             const endTimeStr = getTimestamp();
             let correctCount = 0;
             const totalQuestions = questions.length;
+
+            // حساب عدد الإجابات الصحيحة
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
                 if (selected && selected.value === questions[i].correct) correctCount++;
@@ -516,7 +520,10 @@
                 endTime: endTimeStr
             };
 
-            // Cloud Integration: Submit Result (Fire-and-forget)
+            // نص النتيجة الذي سيظهر للطالب
+            const resultText = `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
+
+            // إرسال النتيجة إلى الخادم (بدون انتظار الرد)
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 mode: 'no-cors', // To avoid CORS issues with fire-and-forget
@@ -524,20 +531,25 @@
                 body: JSON.stringify({ action: "submitResult", result: resultEntry })
             }).catch(e => console.error("Error submitting result:", e));
 
+            // قفل الاختبار ومنع التعديل
             lockQuiz();
+
+            // إظهار صفحة الإكمال مع النتيجة
             setTimeout(() => {
                 hideAllPages();
                 const status = document.getElementById('completion-status');
                 const msg = document.getElementById('completion-msg');
+
                 if (isAuto) {
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
-                    msg.textContent = "تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.";
+                    msg.textContent = `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.\n${resultText}`;
                 } else {
                     status.textContent = "تم إرسال إجاباتك بنجاح";
                     status.style.color = "var(--primary-color)";
-                    msg.textContent = "شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.";
+                    msg.textContent = `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.\n${resultText}`;
                 }
+
                 document.getElementById('completion-page').classList.remove('hidden');
                 window.scrollTo(0, 0);
             }, 800);
@@ -676,10 +688,10 @@
 
         function exportResultsToCSV() {
             if (results.length === 0) { alert("لا توجد نتائج مسجلة."); return; }
-            let csvContent = "\uFEFFsep=,\nاسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
+            let csvContent = "\\uFEFFsep=,\\nاسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\\n";
             results.forEach(res => {
                 const name = (res.name || "").replace(/,/g, '');
-                csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
+                csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\\n`;
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
