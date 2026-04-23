@@ -243,11 +243,11 @@
         <button class="btn btn-admin" onclick="showAdminLogin()">لوحة المعلم</button>
     </header>
 
-    <!-- Student Initial Info Page -->
+    <!-- معلومات مدرس الحلقة -->
     <div id="student-info-page" class="container">
-        <h2>بيانات الطالب</h2>
+        <h2>بيانات مدرس الحلقة</h2>
         <div class="form-group">
-            <label for="student-name">اسم الطالب رباعي:</label>
+            <label for="student-name">اسم مدرس الحلقة:</label>
             <input type="text" id="student-name" placeholder="أدخل اسمك هنا">
         </div>
         <button class="btn" onclick="startQuiz()">ابدأ الاختبار</button>
@@ -276,7 +276,7 @@
 
     <!-- Admin Login -->
     <div id="admin-login-page" class="container hidden">
-        <h2>دخول المعلم</h2>
+        <h2>دخول المعلم المسؤول</h2>
         <div class="form-group">
             <label for="admin-password">كلمة المرور:</label>
             <input type="password" id="admin-password">
@@ -318,7 +318,7 @@
 
         <hr style="margin: 30px 0;">
         
-        <h2>نتائج الطلاب المركزية</h2>
+        <h2>نتائج المدرسين</h2>
         <div class="admin-actions">
             <button class="btn" onclick="loadResultsFromCloud()">تحديث النتائج من الخادم</button>
             <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج الحالية إلى Excel (CSV)</button>
@@ -327,7 +327,7 @@
             <table id="results-table">
                 <thead>
                     <tr>
-                        <th>الاسم</th>
+                        <th>اسم مدرس الحلقة</th>
                         <th>الأسئلة</th>
                         <th>الصح</th>
                         <th>الدرجة</th>
@@ -437,18 +437,18 @@
             return remaining > 0 ? remaining : 0;
         }
 
-        // --- Student Logic ---
+        // --- Student Logic (مدرس الحلقة هنا يعتبر "طالب الاختبار") ---
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
             const name = nameInput.value.trim();
 
             if (!name) {
-                alert("يرجى إدخال اسم الطالب أولاً.");
+                alert("يرجى إدخال اسم مدرس الحلقة أولاً.");
                 return;
             }
 
             if (questions.length === 0) {
-                alert("لا توجد أسئلة حالياً. يرجى مراجعة المعلم.");
+                alert("لا توجد أسئلة حالياً. يرجى مراجعة المعلم المسؤول.");
                 return;
             }
 
@@ -528,7 +528,7 @@
             labels.forEach(label => label.classList.add('locked'));
         }
 
-        // --- Student: Submit Quiz (with score + wrong questions) ---
+        // --- Submit Quiz: يظهر الدرجة + عناوين الأسئلة الخاطئة فقط ---
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
             isSubmitted = true;
@@ -538,36 +538,19 @@
             let correctCount = 0;
             const totalQuestions = questions.length;
 
-            // مصفوفة لتجميع الأسئلة الخاطئة
+            // مصفوفة لتجميع أرقام ونصوص الأسئلة الخاطئة فقط
             const wrongQuestions = [];
-            const labels = ['A', 'B', 'C', 'D'];
 
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
                 const correctLetter = questions[i].correct;
-                
-                const correctIndex = labels.indexOf(correctLetter);
-                const correctText = correctIndex >= 0 ? questions[i].options[correctIndex] : '';
 
-                let selectedLetter = null;
-                let selectedText = '';
-
-                if (selected) {
-                    selectedLetter = selected.value;
-                    const selIndex = labels.indexOf(selectedLetter);
-                    selectedText = selIndex >= 0 ? questions[i].options[selIndex] : '';
-                }
-
-                if (selected && selectedLetter === correctLetter) {
+                if (selected && selected.value === correctLetter) {
                     correctCount++;
                 } else {
                     wrongQuestions.push({
                         number: i + 1,
-                        question: questions[i].text,
-                        selectedLetter,
-                        selectedText,
-                        correctLetter,
-                        correctText
+                        question: questions[i].text
                     });
                 }
             }
@@ -576,26 +559,23 @@
                 name: currentStudentName,
                 total: totalQuestions,
                 correct: correctCount,
-                score: totalQuestions > 0 ? ((correctCount / totalQuestions) * 100).toFixed(2) : "0.00",
+                score: totalQuestions > 0
+                    ? ((correctCount / totalQuestions) * 100).toFixed(2)
+                    : "0.00",
                 startTime: startTimeStr,
                 endTime: endTimeStr
             };
 
             // نص النتيجة
-            const resultText = `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
+            const resultText =
+                `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
 
-            // تجهيز HTML للأسئلة الخاطئة
+            // تجهيز HTML للأسئلة التي أخطأ فيها (بدون ذكر الإجابات)
             let wrongHtml = "";
             if (wrongQuestions.length > 0) {
                 wrongHtml += "<br><br><strong>الأسئلة التي تحتاج إلى مراجعة:</strong><br>";
                 wrongQuestions.forEach(w => {
                     wrongHtml += `<br><strong>سؤال ${w.number}:</strong> ${w.question}<br>`;
-                    if (w.selectedLetter) {
-                        wrongHtml += `إجابتك: (${w.selectedLetter}) ${w.selectedText}<br>`;
-                    } else {
-                        wrongHtml += "لم تُجب عن هذا السؤال.<br>";
-                    }
-                    wrongHtml += `الإجابة الصحيحة: (${w.correctLetter}) ${w.correctText}<br>`;
                 });
             } else {
                 wrongHtml += "<br><br>أحسنت! أجبت عن جميع الأسئلة بشكل صحيح.";
@@ -624,11 +604,13 @@
                 if (isAuto) {
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
-                    msg.innerHTML = `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}${wrongHtml}`;
+                    msg.innerHTML =
+                        `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}${wrongHtml}`;
                 } else {
                     status.textContent = "تم إرسال إجاباتك بنجاح";
                     status.style.color = "var(--primary-color)";
-                    msg.innerHTML = `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}${wrongHtml}`;
+                    msg.innerHTML =
+                        `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}${wrongHtml}`;
                 }
 
                 document.getElementById('completion-page').classList.remove('hidden');
@@ -656,7 +638,10 @@
             questions.forEach((q, index) => addQuestionRow(q, index));
         }
 
-        function addQuestionRow(q = {text: '', options: ['', '', '', ''], correct: 'A'}, index = null) {
+        function addQuestionRow(
+            q = { text: '', options: ['', '', '', ''], correct: 'A' },
+            index = null
+        ) {
             const tbody = document.getElementById('admin-questions-body');
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -673,12 +658,19 @@
                         <option value="D" ${q.correct === 'D' ? 'selected' : ''}>د</option>
                     </select>
                 </td>
-                <td><button class="btn" style="background-color:#dc3545; padding: 5px 10px;" onclick="this.parentElement.parentElement.remove()">حذف</button></td>
+                <td>
+                    <button class="btn" style="background-color:#dc3545; padding: 5px 10px;"
+                        onclick="this.parentElement.parentElement.remove()">
+                        حذف
+                    </button>
+                </td>
             `;
             tbody.appendChild(row);
         }
 
-        function addNewQuestionRow() { addQuestionRow(); }
+        function addNewQuestionRow() {
+            addQuestionRow();
+        }
 
         // --- Cloud Integration: Save Questions ---
         function saveQuestionsToCloud() {
@@ -686,7 +678,9 @@
             const newQuestions = [];
             rows.forEach(row => {
                 const text = row.querySelector('.q-text').value.trim();
-                const opts = Array.from(row.querySelectorAll('.q-opt')).map(input => input.value.trim());
+                const opts = Array
+                    .from(row.querySelectorAll('.q-opt'))
+                    .map(input => input.value.trim());
                 const correct = row.querySelector('.q-correct').value;
                 if (text !== "") newQuestions.push({ text, options: opts, correct });
             });
@@ -736,7 +730,14 @@
             tbody.innerHTML = '';
             results.forEach(res => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${res.name}</td><td>${res.total}</td><td>${res.correct}</td><td>${res.score}%</td><td>${res.startTime}</td><td>${res.endTime}</td>`;
+                row.innerHTML = `
+                    <td>${res.name}</td>
+                    <td>${res.total}</td>
+                    <td>${res.correct}</td>
+                    <td>${res.score}%</td>
+                    <td>${res.startTime}</td>
+                    <td>${res.endTime}</td>
+                `;
                 tbody.appendChild(row);
             });
         }
@@ -745,8 +746,11 @@
             const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = url; link.download = "taqrib_questions.json";
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            link.href = url;
+            link.download = "taqrib_questions.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function importQuestionsJSON(event) {
@@ -761,24 +765,34 @@
                         renderAdminQuestions();
                         alert("تم استيراد الأسئلة محلياً. يرجى الضغط على 'حفظ الأسئلة في الخادم' لاعتمادها.");
                     }
-                } catch (err) { alert("خطأ في قراءة الملف."); }
+                } catch (err) {
+                    alert("خطأ في قراءة الملف.");
+                }
             };
             reader.readAsText(file);
             event.target.value = '';
         }
 
         function exportResultsToCSV() {
-            if (results.length === 0) { alert("لا توجد نتائج مسجلة."); return; }
-            let csvContent = "\\uFEFFsep=,\\nاسم الطالب,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\\n";
+            if (results.length === 0) {
+                alert("لا توجد نتائج مسجلة.");
+                return;
+            }
+            let csvContent =
+                "\\uFEFFsep=,\\nاسم مدرس الحلقة,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\\n";
             results.forEach(res => {
                 const name = (res.name || "").replace(/,/g, '');
-                csvContent += `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\\n`;
+                csvContent +=
+                    `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\\n`;
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = url; link.download = "taqrib_quiz_results.csv";
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            link.href = url;
+            link.download = "taqrib_quiz_results.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
     </script>
