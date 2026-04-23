@@ -495,7 +495,7 @@
             labels.forEach(label => label.classList.add('locked'));
         }
 
-        // --- Student: Submit Quiz (with showing score) ---
+        // --- Student: Submit Quiz (with score + wrong questions) ---
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
             isSubmitted = true;
@@ -505,10 +505,39 @@
             let correctCount = 0;
             const totalQuestions = questions.length;
 
-            // حساب عدد الإجابات الصحيحة
+            // لتجميع الأسئلة الخاطئة
+            const wrongQuestions = [];
+
+            const labels = ['A', 'B', 'C', 'D'];
+
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                if (selected && selected.value === questions[i].correct) correctCount++;
+                const correctLetter = questions[i].correct;
+                
+                const correctIndex = labels.indexOf(correctLetter);
+                const correctText = correctIndex >= 0 ? questions[i].options[correctIndex] : '';
+
+                let selectedLetter = null;
+                let selectedText = '';
+
+                if (selected) {
+                    selectedLetter = selected.value;
+                    const selIndex = labels.indexOf(selectedLetter);
+                    selectedText = selIndex >= 0 ? questions[i].options[selIndex] : '';
+                }
+
+                if (selected && selectedLetter === correctLetter) {
+                    correctCount++;
+                } else {
+                    wrongQuestions.push({
+                        number: i + 1,
+                        question: questions[i].text,
+                        selectedLetter,
+                        selectedText,
+                        correctLetter,
+                        correctText
+                    });
+                }
             }
 
             const resultEntry = {
@@ -520,21 +549,38 @@
                 endTime: endTimeStr
             };
 
-            // نص النتيجة الذي سيظهر للطالب
+            // نص النتيجة
             const resultText = `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
 
-            // إرسال النتيجة إلى الخادم (بدون انتظار الرد)
+            // تجهيز HTML للأسئلة الخاطئة
+            let wrongHtml = "";
+            if (wrongQuestions.length > 0) {
+                wrongHtml += "<br><br><strong>الأسئلة التي تحتاج إلى مراجعة:</strong><br>";
+                wrongQuestions.forEach(w => {
+                    wrongHtml += `<br><strong>سؤال ${w.number}:</strong> ${w.question}<br>`;
+                    if (w.selectedLetter) {
+                        wrongHtml += `إجابتك: (${w.selectedLetter}) ${w.selectedText}<br>`;
+                    } else {
+                        wrongHtml += "لم تُجب عن هذا السؤال.<br>";
+                    }
+                    wrongHtml += `الإجابة الصحيحة: (${w.correctLetter}) ${w.correctText}<br>`;
+                });
+            } else {
+                wrongHtml += "<br><br>أحسنت! أجبت عن جميع الأسئلة بشكل صحيح.";
+            }
+
+            // إرسال النتيجة إلى الخادم
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
-                mode: 'no-cors', // To avoid CORS issues with fire-and-forget
+                mode: 'no-cors',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "submitResult", result: resultEntry })
             }).catch(e => console.error("Error submitting result:", e));
 
-            // قفل الاختبار ومنع التعديل
+            // قفل الاختبار
             lockQuiz();
 
-            // إظهار صفحة الإكمال مع النتيجة
+            // إظهار صفحة الإكمال مع النتيجة والتفاصيل
             setTimeout(() => {
                 hideAllPages();
                 const status = document.getElementById('completion-status');
@@ -543,11 +589,11 @@
                 if (isAuto) {
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
-                    msg.textContent = `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.\n${resultText}`;
+                    msg.innerHTML = `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}${wrongHtml}`;
                 } else {
                     status.textContent = "تم إرسال إجاباتك بنجاح";
                     status.style.color = "var(--primary-color)";
-                    msg.textContent = `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.\n${resultText}`;
+                    msg.innerHTML = `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}${wrongHtml}`;
                 }
 
                 document.getElementById('completion-page').classList.remove('hidden');
