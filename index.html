@@ -6,7 +6,7 @@
     <title>اختبار مادة تقريب القرآن</title>
     <!-- 
       TAQRIB AL-QURAN QUIZ - GOOGLE APPS SCRIPT BACKEND VERSION
-      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel.
+      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel, Score Chart.
     -->
     <style>
         :root {
@@ -233,6 +233,9 @@
             }
         }
     </style>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -340,6 +343,11 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- رسم بياني لتوزيع الدرجات -->
+        <h2 style="margin-top: 30px;">رسم بياني لدرجات المدرسين</h2>
+        <canvas id="scoresChart" style="max-width: 800px; margin: 20px auto;"></canvas>
+
         <br>
         <button class="btn btn-secondary" onclick="showStudentPage()">الخروج من لوحة المعلم</button>
     </div>
@@ -361,6 +369,9 @@
         let startTimeStr = "";
         let currentStudentName = "";
         let isSubmitted = false;
+
+        // Chart instance (لمنع إنشاء أكثر من رسم فوق بعض)
+        let scoresChartInstance = null;
 
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
@@ -437,7 +448,7 @@
             return remaining > 0 ? remaining : 0;
         }
 
-        // --- Student Logic (مدرس الحلقة هنا يعتبر "طالب الاختبار") ---
+        // --- Student Logic ---
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
             const name = nameInput.value.trim();
@@ -718,6 +729,7 @@
                     if (data.status === 'success' && data.results) {
                         results = data.results;
                         renderAdminResults();
+                        renderScoresChart(); // استدعاء الرسم البياني بعد تحميل النتائج
                     }
                 })
                 .catch(error => console.error("Error loading results:", error))
@@ -739,6 +751,69 @@
                     <td>${res.endTime}</td>
                 `;
                 tbody.appendChild(row);
+            });
+        }
+
+        // --- Render Scores Chart (Chart.js) ---
+        function renderScoresChart() {
+            const canvas = document.getElementById('scoresChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            // تدمير الرسم السابق إن وجد حتى لا يتكرر
+            if (scoresChartInstance) {
+                scoresChartInstance.destroy();
+            }
+
+            const labels = results.map(r => r.name || 'بدون اسم');
+            const scores = results.map(r => parseFloat(r.score) || 0);
+
+            scoresChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'النسبة المئوية لكل مدرس',
+                        data: scores,
+                        backgroundColor: 'rgba(44, 95, 45, 0.6)',
+                        borderColor: 'rgba(44, 95, 45, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: { family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }
+                            }
+                        },
+                        tooltip: {
+                            rtl: true,
+                            bodyFont: { family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'النسبة المئوية'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'مدرسو الحلقات'
+                            }
+                        }
+                    }
+                }
             });
         }
 
