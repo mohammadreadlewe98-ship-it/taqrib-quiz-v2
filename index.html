@@ -348,6 +348,8 @@
         // --- Global Configuration ---
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3piQy720i25oP6odGQix5D0D9uEAPZP51leBSiS-zqVxpcTJVxjPVyM0pkUCtjz0HzQ/exec";
         const ADMIN_PASSWORD = "98989898";
+        const QUIZ_DURATION_SECONDS = 30 * 60; // 30 دقيقة
+        const STORAGE_KEY_START_TIME = "taqrib_quiz_start_time";
 
         // --- Data & State ---
         let questions = [];
@@ -355,7 +357,7 @@
         
         // Timer Variables
         let timerInterval;
-        let timeLeft = 30 * 60; 
+        let timeLeft = QUIZ_DURATION_SECONDS;
         let startTimeStr = "";
         let currentStudentName = "";
         let isSubmitted = false;
@@ -422,6 +424,19 @@
             return `${y}-${m}-${d} ${h}:${min}:${s}`;
         }
 
+        // --- Helper: Timer from persistent start time ---
+        function calculateTimeLeftFromStorage() {
+            const storedStart = localStorage.getItem(STORAGE_KEY_START_TIME);
+            if (!storedStart) {
+                return QUIZ_DURATION_SECONDS;
+            }
+            const startTimeMs = parseInt(storedStart, 10);
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - startTimeMs) / 1000);
+            const remaining = QUIZ_DURATION_SECONDS - elapsedSeconds;
+            return remaining > 0 ? remaining : 0;
+        }
+
         // --- Student Logic ---
         function startQuiz() {
             const nameInput = document.getElementById('student-name');
@@ -440,8 +455,15 @@
             currentStudentName = name;
             startTimeStr = getTimestamp();
             isSubmitted = false;
-            timeLeft = 30 * 60;
-            
+
+            // إذا لم يكن هناك وقت بداية محفوظ، نضعه الآن
+            if (!localStorage.getItem(STORAGE_KEY_START_TIME)) {
+                localStorage.setItem(STORAGE_KEY_START_TIME, Date.now().toString());
+            }
+
+            // حساب الوقت المتبقي من التخزين
+            timeLeft = calculateTimeLeftFromStorage();
+
             hideAllPages();
             document.getElementById('quiz-page').classList.remove('hidden');
             renderQuiz();
@@ -454,8 +476,19 @@
             const timerContainer = document.getElementById('quiz-timer');
             if (timerInterval) clearInterval(timerInterval);
 
+            // تحديث الوقت المتبقي من التخزين في بداية المؤقت
+            timeLeft = calculateTimeLeftFromStorage();
+
+            // لو انتهى الوقت بالفعل
+            if (timeLeft <= 0) {
+                display.textContent = "0:00";
+                timerContainer.classList.add('timer-warning');
+                submitQuiz(true);
+                return;
+            }
+
             timerInterval = setInterval(() => {
-                timeLeft--;
+                timeLeft = calculateTimeLeftFromStorage();
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
                 display.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
@@ -505,9 +538,8 @@
             let correctCount = 0;
             const totalQuestions = questions.length;
 
-            // لتجميع الأسئلة الخاطئة
+            // مصفوفة لتجميع الأسئلة الخاطئة
             const wrongQuestions = [];
-
             const labels = ['A', 'B', 'C', 'D'];
 
             for (let i = 0; i < totalQuestions; i++) {
@@ -579,6 +611,9 @@
 
             // قفل الاختبار
             lockQuiz();
+
+            // مسح وقت البداية من التخزين حتى لا يستمر المؤقت بعد الإنهاء
+            localStorage.removeItem(STORAGE_KEY_START_TIME);
 
             // إظهار صفحة الإكمال مع النتيجة والتفاصيل
             setTimeout(() => {
