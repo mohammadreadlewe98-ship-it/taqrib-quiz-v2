@@ -370,7 +370,7 @@
         let currentStudentName = "";
         let isSubmitted = false;
 
-        // Chart instance (لمنع إنشاء أكثر من رسم فوق بعض)
+        // Chart instance
         let scoresChartInstance = null;
 
         // --- Initialization ---
@@ -467,12 +467,10 @@
             startTimeStr = getTimestamp();
             isSubmitted = false;
 
-            // إذا لم يكن هناك وقت بداية محفوظ، نضعه الآن
             if (!localStorage.getItem(STORAGE_KEY_START_TIME)) {
                 localStorage.setItem(STORAGE_KEY_START_TIME, Date.now().toString());
             }
 
-            // حساب الوقت المتبقي من التخزين
             timeLeft = calculateTimeLeftFromStorage();
 
             hideAllPages();
@@ -487,10 +485,8 @@
             const timerContainer = document.getElementById('quiz-timer');
             if (timerInterval) clearInterval(timerInterval);
 
-            // تحديث الوقت المتبقي من التخزين في بداية المؤقت
             timeLeft = calculateTimeLeftFromStorage();
 
-            // لو انتهى الوقت بالفعل
             if (timeLeft <= 0) {
                 display.textContent = "0:00";
                 timerContainer.classList.add('timer-warning');
@@ -539,7 +535,7 @@
             labels.forEach(label => label.classList.add('locked'));
         }
 
-        // --- Submit Quiz: يظهر الدرجة + عناوين الأسئلة الخاطئة فقط ---
+        // --- Submit Quiz: يظهر الدرجة فقط بدون تفاصيل الأسئلة ---
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
             isSubmitted = true;
@@ -549,20 +545,12 @@
             let correctCount = 0;
             const totalQuestions = questions.length;
 
-            // مصفوفة لتجميع أرقام ونصوص الأسئلة الخاطئة فقط
-            const wrongQuestions = [];
-
+            // حساب عدد الإجابات الصحيحة فقط
             for (let i = 0; i < totalQuestions; i++) {
                 const selected = document.querySelector(`input[name="q${i}"]:checked`);
                 const correctLetter = questions[i].correct;
-
                 if (selected && selected.value === correctLetter) {
                     correctCount++;
-                } else {
-                    wrongQuestions.push({
-                        number: i + 1,
-                        question: questions[i].text
-                    });
                 }
             }
 
@@ -577,22 +565,9 @@
                 endTime: endTimeStr
             };
 
-            // نص النتيجة
             const resultText =
                 `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
 
-            // تجهيز HTML للأسئلة التي أخطأ فيها (بدون ذكر الإجابات)
-            let wrongHtml = "";
-            if (wrongQuestions.length > 0) {
-                wrongHtml += "<br><br><strong>الأسئلة التي تحتاج إلى مراجعة:</strong><br>";
-                wrongQuestions.forEach(w => {
-                    wrongHtml += `<br><strong>سؤال ${w.number}:</strong> ${w.question}<br>`;
-                });
-            } else {
-                wrongHtml += "<br><br>أحسنت! أجبت عن جميع الأسئلة بشكل صحيح.";
-            }
-
-            // إرسال النتيجة إلى الخادم
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 mode: 'no-cors',
@@ -600,13 +575,9 @@
                 body: JSON.stringify({ action: "submitResult", result: resultEntry })
             }).catch(e => console.error("Error submitting result:", e));
 
-            // قفل الاختبار
             lockQuiz();
-
-            // مسح وقت البداية من التخزين حتى لا يستمر المؤقت بعد الإنهاء
             localStorage.removeItem(STORAGE_KEY_START_TIME);
 
-            // إظهار صفحة الإكمال مع النتيجة والتفاصيل
             setTimeout(() => {
                 hideAllPages();
                 const status = document.getElementById('completion-status');
@@ -616,12 +587,12 @@
                     status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
                     status.style.color = "var(--error-color)";
                     msg.innerHTML =
-                        `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}${wrongHtml}`;
+                        `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}`;
                 } else {
                     status.textContent = "تم إرسال إجاباتك بنجاح";
                     status.style.color = "var(--primary-color)";
                     msg.innerHTML =
-                        `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}${wrongHtml}`;
+                        `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}`;
                 }
 
                 document.getElementById('completion-page').classList.remove('hidden');
@@ -729,7 +700,7 @@
                     if (data.status === 'success' && data.results) {
                         results = data.results;
                         renderAdminResults();
-                        renderScoresChart(); // استدعاء الرسم البياني بعد تحميل النتائج
+                        renderScoresChart();
                     }
                 })
                 .catch(error => console.error("Error loading results:", error))
@@ -761,7 +732,6 @@
 
             const ctx = canvas.getContext('2d');
 
-            // تدمير الرسم السابق إن وجد حتى لا يتكرر
             if (scoresChartInstance) {
                 scoresChartInstance.destroy();
             }
@@ -787,14 +757,10 @@
                     responsive: true,
                     plugins: {
                         legend: {
-                            display: true,
-                            labels: {
-                                font: { family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }
-                            }
+                            display: true
                         },
                         tooltip: {
-                            rtl: true,
-                            bodyFont: { family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }
+                            rtl: true
                         }
                     },
                     scales: {
