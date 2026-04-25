@@ -396,8 +396,8 @@
   </div>
 
   <script>
-    // ضع هنا رابط Web App من Apps Script
-    const GOOGLESCRIPTURL = "YOUR_WEB_APP_URL_HERE";
+    // رابط Web App الذي أرسلته
+    const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
     const ADMINPASSWORD = "98989898";
     const QUIZDURATIONSECONDS = 30 * 60;
     const STORAGEKEYSTARTTIME = "taqrib_quiz_start_time";
@@ -431,13 +431,10 @@
         .then(data => {
           if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
             quizEnabled = !!data.settings.quizEnabled;
-          } else {
-            console.warn("Unexpected getSettings response:", data);
           }
           updateQuizStatusUI();
         })
-        .catch((err) => {
-          console.error("loadSettings error:", err);
+        .catch(() => {
           updateQuizStatusUI();
         });
     }
@@ -489,31 +486,19 @@
           enabled: newState
         })
       })
-        .then(async (r) => {
-          let data;
-          try {
-            data = await r.json();
-          } catch (err) {
-            console.error("toggleQuizEnabled parse error:", err);
-            throw new Error("parse_error");
-          }
-
+        .then(r => r.json())
+        .then(data => {
           if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
             quizEnabled = !!data.settings.quizEnabled;
-            updateQuizStatusUI();
           } else {
-            console.warn("Unexpected setQuizEnabled response:", data);
             quizEnabled = newState;
-            updateQuizStatusUI();
           }
+          updateQuizStatusUI();
         })
-        .catch((err) => {
-          console.error("toggleQuizEnabled error:", err);
-          alert("تم إرسال طلب تغيير حالة الاختبار، لكن حدث خطأ في قراءة الاستجابة.\nتحقق من حالة الزر ومن سلوك الطلاب للتأكد.");
+        .catch(() => {
+          alert("تعذر تغيير حالة الاختبار، تحقق من Apps Script.");
         })
-        .finally(() => {
-          toggleLoading(false);
-        });
+        .finally(() => toggleLoading(false));
     }
 
     /* ========== تحميل الأسئلة ========== */
@@ -526,20 +511,16 @@
         .then(data => {
           if (data.status === "success") {
             questions = data.questions || [];
-            if (questions.length === 0) {
-              console.warn("getQuestions returned success but questions is empty");
-            }
           } else if (data.message === "quiz_disabled") {
             quizEnabled = false;
             updateQuizStatusUI();
           } else {
-            console.warn("Unexpected getQuestions response:", data);
-            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة. حاول لاحقًا.");
+            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة.");
           }
         })
         .catch(error => {
           console.error("Error loading questions:", error);
-          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال ثم أعد المحاولة.");
+          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال.");
         })
         .finally(() => {
           toggleLoading(false);
@@ -564,7 +545,7 @@
       document.getElementById("admin-login-page").classList.remove("hidden");
     }
 
-    /* ========== أدوات الوقت ========== */
+    /* ========== الوقت ========== */
 
     function getTimestamp() {
       const now = new Date();
@@ -587,7 +568,7 @@
       return remaining > 0 ? remaining : 0;
     }
 
-    /* ========== منطق الاختبار للمعلم ========== */
+    /* ========== منطق الاختبار ========== */
 
     async function startQuiz() {
       if (!quizEnabled) {
@@ -603,13 +584,21 @@
         return;
       }
 
-      // لو لم تُحمّل الأسئلة بعد، حاول تحميلها الآن
+      // إذا كانت الأسئلة فارغة هنا، نحاول تحميلها مرّة أخرى مباشرة
       if (questions.length === 0) {
-        await reloadQuestionsBeforeStart();
-        if (questions.length === 0) {
-          alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
-          return;
-        }
+        await fetch(GOOGLESCRIPTURL + "?action=getQuestions")
+          .then(r => r.json())
+          .then(data => {
+            if (data.status === "success") {
+              questions = data.questions || [];
+            }
+          })
+          .catch(err => console.error("reload in startQuiz:", err));
+      }
+
+      if (questions.length === 0) {
+        alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
+        return;
       }
 
       currentStudentName = name;
@@ -627,25 +616,6 @@
       renderQuiz();
       startTimer();
       window.scrollTo(0, 0);
-    }
-
-    // دالة مساعدة لتحميل الأسئلة قبل بدء الاختبار
-    function reloadQuestionsBeforeStart() {
-      return fetch(GOOGLESCRIPTURL + "?action=getQuestions")
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === "success") {
-            questions = data.questions || [];
-          } else if (data.message === "quiz_disabled") {
-            quizEnabled = false;
-            updateQuizStatusUI();
-          } else {
-            console.warn("reloadQuestionsBeforeStart: unexpected response", data);
-          }
-        })
-        .catch(err => {
-          console.error("reloadQuestionsBeforeStart error:", err);
-        });
     }
 
     function startTimer() {
