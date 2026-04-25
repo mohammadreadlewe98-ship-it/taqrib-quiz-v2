@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة التقريب - اختبار المعلمين</title>
+  <title>تقريب القرآن - اختبار المعلمين</title>
   <style>
     :root {
       --primary-color: #2c5f2d;
@@ -395,8 +395,10 @@
     <button class="btn btn-secondary" onclick="showStudentPage()">عودة لواجهة المعلمين</button>
   </div>
 
+  <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
+
   <script>
-    const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1aoQnw/exec";
+    const GOOGLESCRIPTURL = "YOUR_WEB_APP_URL_HERE";
     const ADMINPASSWORD = "98989898";
     const QUIZDURATIONSECONDS = 30 * 60;
     const STORAGEKEYSTARTTIME = "taqrib_quiz_start_time";
@@ -527,18 +529,18 @@
           if (data.status === "success") {
             questions = data.questions || [];
           } else if (data.message === "quiz_disabled") {
+            // السيرفر يقول إن الاختبار متوقف فعلاً
             quizEnabled = false;
             updateQuizStatusUI();
           } else {
             console.warn("Unexpected getQuestions response:", data);
-            throw new Error("Failed to load questions");
+            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة. حاول لاحقًا.");
           }
         })
         .catch(error => {
           console.error("Error loading questions:", error);
-          quizEnabled = false;
-          updateQuizStatusUI();
-          alert("تعذر تحميل الأسئلة حاليًا. يُرجى مراجعة المشرف أو المحاولة لاحقًا.");
+          // لا نغيّر quizEnabled في حالة الخطأ، حتى لا نطفئ الاختبار بالخطأ
+          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال ثم أعد المحاولة.");
         })
         .finally(() => {
           toggleLoading(false);
@@ -775,8 +777,7 @@
       }, 800);
     }
 
-    /* ========== لوحة المشرف: الدخول وإدارة الأسئلة والنتائج ==========
-       (هذه الأجزاء منسوخة من كودك الأصلي مع الحفاظ عليها كما هي تقريبًا) */
+    /* ========== لوحة المشرف: الدخول وإدارة الأسئلة والنتائج ========== */
 
     function checkAdminPassword() {
       const pass = document.getElementById("admin-password").value;
