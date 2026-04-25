@@ -396,7 +396,7 @@
   </div>
 
   <script>
-    // رابط Web App الذي أرسلته
+    // رابط Web App
     const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
     const ADMINPASSWORD = "98989898";
     const QUIZDURATIONSECONDS = 30 * 60;
@@ -507,20 +507,25 @@
       toggleLoading(true);
 
       fetch(GOOGLESCRIPTURL + "?action=getQuestions")
-        .then(response => response.json())
+        .then(response => {
+          console.log("getQuestions status:", response.status);
+          return response.json();
+        })
         .then(data => {
+          console.log("getQuestions data:", data);
           if (data.status === "success") {
             questions = data.questions || [];
+            console.log("questions length after load:", questions.length);
           } else if (data.message === "quiz_disabled") {
             quizEnabled = false;
             updateQuizStatusUI();
           } else {
-            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة.");
+            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة: " + (data.message || ""));
           }
         })
         .catch(error => {
           console.error("Error loading questions:", error);
-          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال.");
+          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال أو من إعدادات Web App.");
         })
         .finally(() => {
           toggleLoading(false);
@@ -584,20 +589,35 @@
         return;
       }
 
-      // إذا كانت الأسئلة فارغة هنا، نحاول تحميلها مرّة أخرى مباشرة
+      // إذا كانت الأسئلة فارغة هنا، نحاول تحميلها مرّة أخرى مباشرة مع تسجيل ما يحدث
       if (questions.length === 0) {
-        await fetch(GOOGLESCRIPTURL + "?action=getQuestions")
-          .then(r => r.json())
-          .then(data => {
-            if (data.status === "success") {
-              questions = data.questions || [];
-            }
-          })
-          .catch(err => console.error("reload in startQuiz:", err));
+        console.log("questions is empty before startQuiz, reloading...");
+        try {
+          const r = await fetch(GOOGLESCRIPTURL + "?action=getQuestions");
+          console.log("reload getQuestions status:", r.status);
+          const data = await r.json();
+          console.log("reload getQuestions data:", data);
+          if (data.status === "success") {
+            questions = data.questions || [];
+            console.log("questions length after reload:", questions.length);
+          } else if (data.message === "quiz_disabled") {
+            quizEnabled = false;
+            updateQuizStatusUI();
+            alert("الاختبار متوقف حاليًا من إعدادات المشرف.");
+            return;
+          } else {
+            alert("خطأ أثناء إعادة تحميل الأسئلة: " + (data.message || ""));
+            return;
+          }
+        } catch (err) {
+          console.error("reload in startQuiz error:", err);
+          alert("تعذر تحميل الأسئلة من السيرفر. تحقق من الاتصال أو من صلاحيات Web App.");
+          return;
+        }
       }
 
       if (questions.length === 0) {
-        alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
+        alert("لا توجد أسئلة متاحة حاليًا بعد المحاولات. يرجى مراجعة المشرف.");
         return;
       }
 
