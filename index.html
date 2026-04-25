@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تقريب القرآن - اختبار المعلمين</title>
+  <title>منصة التقريب - اختبار المعلمين</title>
   <style>
     :root {
       --primary-color: #2c5f2d;
@@ -395,9 +395,8 @@
     <button class="btn btn-secondary" onclick="showStudentPage()">عودة لواجهة المعلمين</button>
   </div>
 
-  <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
-
   <script>
+    // ضع هنا رابط Web App من Apps Script
     const GOOGLESCRIPTURL = "YOUR_WEB_APP_URL_HERE";
     const ADMINPASSWORD = "98989898";
     const QUIZDURATIONSECONDS = 30 * 60;
@@ -439,7 +438,6 @@
         })
         .catch((err) => {
           console.error("loadSettings error:", err);
-          // لا نغيّر quizEnabled عند الفشل؛ نتركها كما هي
           updateQuizStatusUI();
         });
     }
@@ -528,8 +526,10 @@
         .then(data => {
           if (data.status === "success") {
             questions = data.questions || [];
+            if (questions.length === 0) {
+              console.warn("getQuestions returned success but questions is empty");
+            }
           } else if (data.message === "quiz_disabled") {
-            // السيرفر يقول إن الاختبار متوقف فعلاً
             quizEnabled = false;
             updateQuizStatusUI();
           } else {
@@ -539,7 +539,6 @@
         })
         .catch(error => {
           console.error("Error loading questions:", error);
-          // لا نغيّر quizEnabled في حالة الخطأ، حتى لا نطفئ الاختبار بالخطأ
           alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال ثم أعد المحاولة.");
         })
         .finally(() => {
@@ -590,7 +589,7 @@
 
     /* ========== منطق الاختبار للمعلم ========== */
 
-    function startQuiz() {
+    async function startQuiz() {
       if (!quizEnabled) {
         alert("الاختبار متوقف حاليًا. يرجى مراجعة المشرف.");
         return;
@@ -604,9 +603,13 @@
         return;
       }
 
+      // لو لم تُحمّل الأسئلة بعد، حاول تحميلها الآن
       if (questions.length === 0) {
-        alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
-        return;
+        await reloadQuestionsBeforeStart();
+        if (questions.length === 0) {
+          alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
+          return;
+        }
       }
 
       currentStudentName = name;
@@ -624,6 +627,25 @@
       renderQuiz();
       startTimer();
       window.scrollTo(0, 0);
+    }
+
+    // دالة مساعدة لتحميل الأسئلة قبل بدء الاختبار
+    function reloadQuestionsBeforeStart() {
+      return fetch(GOOGLESCRIPTURL + "?action=getQuestions")
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "success") {
+            questions = data.questions || [];
+          } else if (data.message === "quiz_disabled") {
+            quizEnabled = false;
+            updateQuizStatusUI();
+          } else {
+            console.warn("reloadQuestionsBeforeStart: unexpected response", data);
+          }
+        })
+        .catch(err => {
+          console.error("reloadQuestionsBeforeStart error:", err);
+        });
     }
 
     function startTimer() {
