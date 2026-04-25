@@ -1,1070 +1,1103 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار مادة تقريب القرآن</title>
-    <style>
-        :root {
-            --primary-color: #2c5f2d;
-            --secondary-color: #97bc62;
-            --bg-color: #f4f7f6;
-            --text-color: #333;
-            --white: #ffffff;
-            --accent-color: #d4af37;
-            --error-color: #dc3545;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة التقريب - اختبار المعلمين</title>
+  <style>
+    :root {
+      --primary-color: #2c5f2d;
+      --secondary-color: #97bc62;
+      --bg-color: #f4f7f6;
+      --text-color: #333;
+      --white: #ffffff;
+      --accent-color: #d4af37;
+      --error-color: #dc3545;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-        header {
-            background-color: var(--primary-color);
-            color: var(--white);
-            width: 100%;
-            padding: 20px 0;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: relative;
-        }
+    header {
+      background-color: var(--primary-color);
+      color: var(--white);
+      width: 100%;
+      padding: 20px 0;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: relative;
+    }
 
-        .container {
-            width: 90%;
-            max-width: 800px;
-            background: var(--white);
-            padding: 30px;
-            margin: 20px 0;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border-top: 5px solid var(--accent-color);
-        }
+    .container {
+      width: 90%;
+      max-width: 800px;
+      background: var(--white);
+      padding: 30px;
+      margin: 20px 0;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      border-top: 5px solid var(--accent-color);
+    }
 
-        .timer-container {
-            position: sticky;
-            top: 10px;
-            background: var(--white);
-            padding: 10px 20px;
-            border-radius: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 100;
-            margin-bottom: 20px;
-            border: 2px solid var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--primary-color);
-        }
+    .timer-container {
+      position: sticky;
+      top: 10px;
+      background: var(--white);
+      padding: 10px 20px;
+      border-radius: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 100;
+      margin-bottom: 20px;
+      border: 2px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: var(--primary-color);
+    }
 
-        .timer-warning {
-            color: var(--error-color);
-            border-color: var(--error-color);
-            animation: pulse 1s infinite;
-        }
+    .timer-warning {
+      color: var(--error-color);
+      border-color: var(--error-color);
+      animation: pulse 1s infinite;
+    }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: .7; }
+      100% { opacity: 1; }
+    }
 
-        h1, h2 { margin-top: 0; }
+    h1, h2 {
+      margin-top: 0;
+    }
 
-        .hidden { display: none !important; }
+    .hidden {
+      display: none !important;
+    }
 
-        .form-group { margin-bottom: 20px; }
+    .form-group {
+      margin-bottom: 20px;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
 
-        input[type="text"], input[type="password"], select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
+    input[type="text"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
 
-        .btn {
-            background-color: var(--primary-color);
-            color: var(--white);
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-            display: inline-block;
-            text-decoration: none;
-            text-align: center;
-        }
+    .btn {
+      background-color: var(--primary-color);
+      color: var(--white);
+      padding: 12px 25px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+      display: inline-block;
+      text-decoration: none;
+      text-align: center;
+    }
 
-        .btn:hover:not(:disabled) { background-color: #1e421e; }
+    .btn:hover:not(.disabled) {
+      background-color: #1e421e;
+    }
 
-        .btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+    .btn.disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
 
-        .btn-secondary { background-color: #6c757d; }
+    .btn-secondary {
+      background-color: #6c757d;
+    }
 
-        .btn-admin {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 12px;
-            padding: 5px 10px;
-            opacity: 0.7;
-        }
+    .btn-admin {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 12px;
+      padding: 5px 10px;
+      opacity: 0.7;
+    }
 
-        .question-card {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-        }
+    .question-card {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
 
-        .options-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
+    .options-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
 
-        .option-label {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    .option-label {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
 
-        .option-label:hover:not(.locked) {
-            background: #f0f0f0;
-            border-color: var(--primary-color);
-        }
+    .option-label:hover:not(.locked) {
+      background: #f0f0f0;
+      border-color: var(--primary-color);
+    }
 
-        .option-label.locked {
-            cursor: default;
-            opacity: 0.8;
-        }
+    .option-label.locked {
+      cursor: default;
+      opacity: 0.8;
+    }
 
-        .option-label input {
-            margin-left: 10px;
-            transform: scale(1.2);
-        }
+    .option-label input {
+      margin-left: 10px;
+      transform: scale(1.2);
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
 
-        th {
-            background-color: var(--primary-color);
-            color: white;
-        }
+    th {
+      background-color: var(--primary-color);
+      color: white;
+    }
 
-        .admin-actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+    .admin-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            font-weight: bold;
-        }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
 
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-right: 10px;
-        }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin-right: 10px;
+    }
 
-        .status-on {
-            background-color: #d4edda;
-            color: #155724;
-        }
+    .status-on {
+      background-color: #d4edda;
+      color: #155724;
+    }
 
-        .status-off {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
+    .status-off {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
 
-        @media (max-width: 600px) {
-            .container {
-                width: 95%;
-                padding: 15px;
-            }
-            .btn-admin {
-                top: 10px;
-                left: 10px;
-            }
-        }
-    </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    @media (max-width: 600px) {
+      .container {
+        width: 95%;
+        padding: 15px;
+      }
+      .btn-admin {
+        top: 10px;
+        left: 10px;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 
-    <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
+  <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
 
-    <header>
-        <h1>اختبار مادة تقريب القرآن</h1>
-        <button class="btn btn-admin" onclick="showAdminLogin()">لوحة المعلم</button>
-    </header>
+  <header>
+    <h1>منصة التقريب - اختبار المعلمين</h1>
+    <button class="btn btn-admin" onclick="showAdminLogin()">دخول المشرف</button>
+  </header>
 
-    <!-- صفحة معلومات مدرس الحلقة -->
-    <div id="student-info-page" class="container">
-        <h2>بيانات مدرس الحلقة</h2>
-        <div id="quiz-status-message" class="form-group hidden" style="color: var(--error-color); font-weight: bold;"></div>
-        <div class="form-group">
-            <label for="student-name">اسم مدرس الحلقة:</label>
-            <input type="text" id="student-name" placeholder="أدخل اسمك هنا">
-        </div>
-        <button id="start-quiz-btn" class="btn" onclick="startQuiz()">ابدأ الاختبار</button>
+  <!-- صفحة بيانات المعلم / البداية -->
+  <div id="student-info-page" class="container">
+    <h2>بيانات المعلم</h2>
+
+    <div id="quiz-status-message" class="form-group hidden" style="color: var(--error-color); font-weight: bold;"></div>
+
+    <div class="form-group">
+      <label for="student-name">اسم المعلم</label>
+      <input type="text" id="student-name" placeholder="اكتب اسمك الثلاثي">
     </div>
 
-    <!-- صفحة الاختبار -->
-    <div id="quiz-page" class="container hidden">
-        <div id="quiz-timer" class="timer-container">
-            الوقت المتبقي: <span id="time-display">30:00</span>
-        </div>
-        <h2 id="quiz-title">الأسئلة</h2>
-        <div id="questions-container"></div>
-        <button id="submit-btn" class="btn" onclick="submitQuiz(false)">إنهاء الاختبار وإرسال الإجابات</button>
+    <button id="start-quiz-btn" class="btn" onclick="startQuiz()">بدء الاختبار</button>
+  </div>
+
+  <!-- صفحة الاختبار -->
+  <div id="quiz-page" class="container hidden">
+    <div id="quiz-timer" class="timer-container">
+      <span id="time-display">30:00</span>
+    </div>
+    <h2 id="quiz-title">الاختبار</h2>
+    <div id="questions-container"></div>
+    <button id="submit-btn" class="btn" onclick="submitQuiz(false)">تسليم الاختبار</button>
+  </div>
+
+  <!-- صفحة النتيجة -->
+  <div id="completion-page" class="container hidden">
+    <div style="text-align: center;">
+      <h2 id="completion-status" style="color: var(--primary-color);"></h2>
+      <p id="completion-msg"></p>
+      <button class="btn btn-secondary" onclick="location.reload()">اختبار جديد</button>
+    </div>
+  </div>
+
+  <!-- صفحة دخول المشرف -->
+  <div id="admin-login-page" class="container hidden">
+    <h2>دخول المشرف</h2>
+    <div class="form-group">
+      <label for="admin-password">كلمة مرور المشرف</label>
+      <input type="password" id="admin-password">
+    </div>
+    <button class="btn" onclick="checkAdminPassword()">دخول</button>
+    <button class="btn btn-secondary" onclick="showStudentPage()">رجوع</button>
+  </div>
+
+  <!-- لوحة المشرف -->
+  <div id="admin-dashboard" class="container hidden" style="max-width: 1000px;">
+    <h2>
+      <span id="quiz-status-badge" class="status-badge"></span>
+      لوحة التحكم بالاختبار
+    </h2>
+
+    <div class="admin-actions">
+      <button id="toggle-quiz-btn" class="btn" onclick="toggleQuizEnabled()"></button>
     </div>
 
-    <!-- صفحة الإكمال -->
-    <div id="completion-page" class="container hidden">
-        <div style="text-align: center;">
-            <h2 id="completion-status" style="color: var(--primary-color);">تم إرسال إجاباتك بنجاح</h2>
-            <p id="completion-msg">شكرًا لك، تم تسجيل إجاباتك بنجاح. يمكنك إغلاق هذه الصفحة الآن.</p>
-            <button class="btn btn-secondary" onclick="location.reload()">العودة للرئيسية</button>
-        </div>
+    <hr style="margin: 30px 0;">
+
+    <h2>إدارة الأسئلة</h2>
+    <div style="overflow-x: auto;">
+      <table id="questions-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>نص السؤال</th>
+            <th>اختيار أ</th>
+            <th>اختيار ب</th>
+            <th>اختيار ج</th>
+            <th>اختيار د</th>
+            <th>الإجابة الصحيحة</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody id="admin-questions-body"></tbody>
+      </table>
     </div>
 
-    <!-- صفحة دخول المعلم -->
-    <div id="admin-login-page" class="container hidden">
-        <h2>دخول المعلم المسؤول</h2>
-        <div class="form-group">
-            <label for="admin-password">كلمة المرور:</label>
-            <input type="password" id="admin-password">
-        </div>
-        <button class="btn" onclick="checkAdminPassword()">دخول</button>
-        <button class="btn btn-secondary" onclick="showStudentPage()">رجوع</button>
+    <div class="admin-actions">
+      <button class="btn" onclick="addNewQuestionRow()">إضافة سؤال جديد</button>
+      <button class="btn" onclick="saveQuestionsToCloud()">حفظ الأسئلة</button>
+      <button class="btn" onclick="exportQuestionsJSON()">تصدير الأسئلة (JSON)</button>
+      <label class="btn" style="cursor:pointer;">
+        استيراد JSON
+        <input type="file" id="import-json" style="display:none" accept=".json" onchange="importQuestionsJSON(event)">
+      </label>
     </div>
 
-    <!-- لوحة المعلم -->
-    <div id="admin-dashboard" class="container hidden" style="max-width: 1000px;">
-        <h2>
-            لوحة المعلم
-            <span id="quiz-status-badge" class="status-badge"></span>
-        </h2>
-        <div class="admin-actions">
-            <button id="toggle-quiz-btn" class="btn" onclick="toggleQuizEnabled()">إيقاف الاختبار</button>
-        </div>
+    <hr style="margin: 30px 0;">
 
-        <hr style="margin: 30px 0;">
+    <h2>نتائج المعلمين</h2>
+    <div class="admin-actions">
+      <button class="btn" onclick="loadResultsFromCloud()">تحديث النتائج</button>
+      <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج (Excel CSV)</button>
+      <button class="btn" onclick="exportAllWrongQuestionsToCSV()">تصدير كل الأسئلة الخاطئة (Excel CSV)</button>
+    </div>
 
-        <h2>إدارة الأسئلة</h2>
-        <div style="overflow-x: auto;">
-            <table id="questions-table">
-                <thead>
-                    <tr>
-                        <th>السؤال</th>
-                        <th>أ</th>
-                        <th>ب</th>
-                        <th>ج</th>
-                        <th>د</th>
-                        <th>الإجابة</th>
-                        <th>حذف</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-questions-body"></tbody>
-            </table>
-        </div>
-        <div class="admin-actions">
-            <button class="btn" onclick="addNewQuestionRow()">إضافة سؤال جديد</button>
-            <button class="btn" onclick="saveQuestionsToCloud()">حفظ الأسئلة في الخادم</button>
-            <button class="btn" onclick="exportQuestionsJSON()">تصدير الأسئلة (JSON)</button>
-            <label class="btn" style="cursor: pointer;">
-                استيراد أسئلة (JSON)
-                <input type="file" id="import-json" style="display:none" accept=".json" onchange="importQuestionsJSON(event)">
+    <div style="overflow-x: auto; margin-top: 15px;">
+      <table id="results-table">
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>عدد الأسئلة</th>
+            <th>عدد الصحيحة</th>
+            <th>النتيجة%</th>
+            <th>وقت البداية</th>
+            <th>وقت النهاية</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>الأسئلة الخاطئة حسب المعلم</h2>
+    <div class="admin-actions">
+      <div class="form-group" style="flex:1; min-width:200px;">
+        <label for="teacher-name-filter">اختر اسم المعلم</label>
+        <select id="teacher-name-filter" style="width:100%; padding:8px;">
+          <option value="">-- اختر معلمًا --</option>
+        </select>
+      </div>
+      <button class="btn" onclick="loadTeacherWrongQuestions()">عرض الأسئلة الخاطئة للمعلم</button>
+    </div>
+    <div id="teacher-wrong-questions" style="margin-top:15px;"></div>
+
+    <h2 style="margin-top:30px;">رسم بياني لنتائج المعلمين</h2>
+    <canvas id="scoresChart" style="max-width:800px; margin:20px auto;"></canvas>
+    <br>
+    <button class="btn btn-secondary" onclick="showStudentPage()">عودة لواجهة المعلمين</button>
+  </div>
+
+  <script>
+    const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1aoQnw/exec";
+    const ADMINPASSWORD = "98989898";
+    const QUIZDURATIONSECONDS = 30 * 60;
+    const STORAGEKEYSTARTTIME = "taqrib_quiz_start_time";
+
+    let questions = [];
+    let results = [];
+    let timerInterval;
+    let timeLeft = QUIZDURATIONSECONDS;
+    let startTimeStr = "";
+    let currentStudentName = "";
+    let isSubmitted = false;
+    let scoresChartInstance = null;
+    let quizEnabled = true;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadSettings();
+      loadQuestionsFromCloud();
+    });
+
+    function toggleLoading(show) {
+      const overlay = document.getElementById("loading-overlay");
+      if (show) overlay.classList.remove("hidden");
+      else overlay.classList.add("hidden");
+    }
+
+    /* ========== الإعدادات وحالة الاختبار ========== */
+
+    function loadSettings() {
+      fetch(GOOGLESCRIPTURL + "?action=getSettings")
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
+            quizEnabled = !!data.settings.quizEnabled;
+          } else {
+            console.warn("Unexpected getSettings response:", data);
+          }
+          updateQuizStatusUI();
+        })
+        .catch((err) => {
+          console.error("loadSettings error:", err);
+          // لا نغيّر quizEnabled عند الفشل؛ نتركها كما هي
+          updateQuizStatusUI();
+        });
+    }
+
+    function updateQuizStatusUI() {
+      const badge = document.getElementById("quiz-status-badge");
+      const toggleBtn = document.getElementById("toggle-quiz-btn");
+      const statusMsg = document.getElementById("quiz-status-message");
+      const startBtn = document.getElementById("start-quiz-btn");
+
+      if (badge) {
+        if (quizEnabled) {
+          badge.textContent = "الاختبار مفتوح";
+          badge.classList.remove("status-off");
+          badge.classList.add("status-on");
+        } else {
+          badge.textContent = "الاختبار متوقف";
+          badge.classList.remove("status-on");
+          badge.classList.add("status-off");
+        }
+      }
+
+      if (toggleBtn) {
+        toggleBtn.textContent = quizEnabled ? "إيقاف استقبال الإجابات" : "تشغيل استقبال الإجابات";
+      }
+
+      if (statusMsg && startBtn) {
+        if (!quizEnabled) {
+          statusMsg.textContent = "الاختبار متوقف حاليًا. لا يمكن البدء حتى يعيده المشرف.";
+          statusMsg.classList.remove("hidden");
+          startBtn.disabled = true;
+        } else {
+          statusMsg.textContent = "";
+          statusMsg.classList.add("hidden");
+          startBtn.disabled = false;
+        }
+      }
+    }
+
+    function toggleQuizEnabled() {
+      const newState = !quizEnabled;
+      toggleLoading(true);
+
+      fetch(GOOGLESCRIPTURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "setQuizEnabled",
+          enabled: newState
+        })
+      })
+        .then(async (r) => {
+          let data;
+          try {
+            data = await r.json();
+          } catch (err) {
+            console.error("toggleQuizEnabled parse error:", err);
+            throw new Error("parse_error");
+          }
+
+          if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
+            quizEnabled = !!data.settings.quizEnabled;
+            updateQuizStatusUI();
+          } else {
+            console.warn("Unexpected setQuizEnabled response:", data);
+            quizEnabled = newState;
+            updateQuizStatusUI();
+          }
+        })
+        .catch((err) => {
+          console.error("toggleQuizEnabled error:", err);
+          alert("تم إرسال طلب تغيير حالة الاختبار، لكن حدث خطأ في قراءة الاستجابة.\nتحقق من حالة الزر ومن سلوك الطلاب للتأكد.");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    /* ========== تحميل الأسئلة ========== */
+
+    function loadQuestionsFromCloud() {
+      toggleLoading(true);
+
+      fetch(GOOGLESCRIPTURL + "?action=getQuestions")
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "success") {
+            questions = data.questions || [];
+          } else if (data.message === "quiz_disabled") {
+            quizEnabled = false;
+            updateQuizStatusUI();
+          } else {
+            console.warn("Unexpected getQuestions response:", data);
+            throw new Error("Failed to load questions");
+          }
+        })
+        .catch(error => {
+          console.error("Error loading questions:", error);
+          quizEnabled = false;
+          updateQuizStatusUI();
+          alert("تعذر تحميل الأسئلة حاليًا. يُرجى مراجعة المشرف أو المحاولة لاحقًا.");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    /* ========== التنقل بين الصفحات ========== */
+
+    function hideAllPages() {
+      ["student-info-page", "quiz-page", "completion-page", "admin-login-page", "admin-dashboard"]
+        .forEach(id => document.getElementById(id).classList.add("hidden"));
+    }
+
+    function showStudentPage() {
+      hideAllPages();
+      document.getElementById("student-info-page").classList.remove("hidden");
+      loadSettings();
+    }
+
+    function showAdminLogin() {
+      hideAllPages();
+      document.getElementById("admin-login-page").classList.remove("hidden");
+    }
+
+    /* ========== أدوات الوقت ========== */
+
+    function getTimestamp() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const h = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const s = String(now.getSeconds()).padStart(2, "0");
+      return `${y}-${m}-${d} ${h}:${min}:${s}`;
+    }
+
+    function calculateTimeLeftFromStorage() {
+      const storedStart = localStorage.getItem(STORAGEKEYSTARTTIME);
+      if (!storedStart) return QUIZDURATIONSECONDS;
+      const startTimeMs = parseInt(storedStart, 10);
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTimeMs) / 1000);
+      const remaining = QUIZDURATIONSECONDS - elapsedSeconds;
+      return remaining > 0 ? remaining : 0;
+    }
+
+    /* ========== منطق الاختبار للمعلم ========== */
+
+    function startQuiz() {
+      if (!quizEnabled) {
+        alert("الاختبار متوقف حاليًا. يرجى مراجعة المشرف.");
+        return;
+      }
+
+      const nameInput = document.getElementById("student-name");
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        alert("يرجى إدخال اسمك الكامل قبل بدء الاختبار.");
+        return;
+      }
+
+      if (questions.length === 0) {
+        alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
+        return;
+      }
+
+      currentStudentName = name;
+      startTimeStr = getTimestamp();
+      isSubmitted = false;
+
+      if (!localStorage.getItem(STORAGEKEYSTARTTIME)) {
+        localStorage.setItem(STORAGEKEYSTARTTIME, Date.now().toString());
+      }
+
+      timeLeft = calculateTimeLeftFromStorage();
+
+      hideAllPages();
+      document.getElementById("quiz-page").classList.remove("hidden");
+      renderQuiz();
+      startTimer();
+      window.scrollTo(0, 0);
+    }
+
+    function startTimer() {
+      const display = document.getElementById("time-display");
+      const timerContainer = document.getElementById("quiz-timer");
+
+      if (timerInterval) clearInterval(timerInterval);
+      timeLeft = calculateTimeLeftFromStorage();
+
+      if (timeLeft <= 0) {
+        display.textContent = "00:00";
+        timerContainer.classList.add("timer-warning");
+        submitQuiz(true);
+        return;
+      }
+
+      timerInterval = setInterval(() => {
+        timeLeft = calculateTimeLeftFromStorage();
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        display.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+
+        if (timeLeft <= 300) {
+          timerContainer.classList.add("timer-warning");
+        }
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          submitQuiz(true);
+        }
+      }, 1000);
+    }
+
+    function renderQuiz() {
+      const container = document.getElementById("questions-container");
+      container.innerHTML = "";
+      questions.forEach((q, index) => {
+        const qDiv = document.createElement("div");
+        qDiv.className = "question-card";
+
+        let optionsHTML = "";
+        const labels = ["A", "B", "C", "D"];
+
+        q.options.forEach((opt, i) => {
+          optionsHTML += `
+            <label class="option-label">
+              <input type="radio" name="q${index}" value="${labels[i]}">
+              <span style="margin-right:5px;">${labels[i]}.</span>
+              ${opt}
             </label>
-        </div>
-
-        <hr style="margin: 30px 0;">
-        
-        <h2>نتائج المدرسين</h2>
-        <div class="admin-actions">
-            <button class="btn" onclick="loadResultsFromCloud()">تحديث النتائج من الخادم</button>
-            <button class="btn" onclick="exportResultsToCSV()">تصدير النتائج العامة إلى Excel (CSV)</button>
-            <button class="btn" onclick="exportAllWrongQuestionsToCSV()">تصدير كل الأخطاء إلى Excel (CSV)</button>
-        </div>
-        <div style="overflow-x: auto; margin-top: 15px;">
-            <table id="results-table">
-                <thead>
-                    <tr>
-                        <th>اسم مدرس الحلقة</th>
-                        <th>الأسئلة</th>
-                        <th>الصح</th>
-                        <th>الدرجة</th>
-                        <th>وقت البدء</th>
-                        <th>وقت الانتهاء</th>
-                    </tr>
-                </thead>
-                <tbody id="results-body"></tbody>
-            </table>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        <h2>أخطاء مدرس معيّن</h2>
-        <div class="admin-actions">
-            <div class="form-group" style="flex: 1; min-width: 200px;">
-                <label for="teacher-name-filter">اختر اسم مدرس الحلقة:</label>
-                <select id="teacher-name-filter" style="width: 100%; padding: 8px;">
-                    <option value="">-- اختر مدرساً --</option>
-                </select>
-            </div>
-            <button class="btn" onclick="loadTeacherWrongQuestions()">عرض الأخطاء لهذا المدرس</button>
-        </div>
-        <div id="teacher-wrong-questions" style="margin-top: 15px;"></div>
-
-        <h2 style="margin-top: 30px;">رسم بياني لدرجات المدرسين</h2>
-        <canvas id="scoresChart" style="max-width: 800px; margin: 20px auto;"></canvas>
-
-        <br>
-        <button class="btn btn-secondary" onclick="showStudentPage()">الخروج من لوحة المعلم</button>
-    </div>
-
-    <div id="loading-overlay" class="loading-overlay hidden">جاري التحميل...</div>
-
-    <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
-        const ADMIN_PASSWORD = "98989898";
-        const QUIZ_DURATION_SECONDS = 30 * 60;
-        const STORAGE_KEY_START_TIME = "taqrib_quiz_start_time";
-
-        let questions = [];
-        let results = [];
-        let timerInterval;
-        let timeLeft = QUIZ_DURATION_SECONDS;
-        let startTimeStr = "";
-        let currentStudentName = "";
-        let isSubmitted = false;
-        let scoresChartInstance = null;
-        let quizEnabled = true;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
-            loadQuestionsFromCloud();
+          `;
         });
 
-        function toggleLoading(show) {
-            const overlay = document.getElementById('loading-overlay');
-            if (show) overlay.classList.remove('hidden');
-            else overlay.classList.add('hidden');
+        qDiv.innerHTML = `
+          <p><strong>${index + 1}.</strong> ${q.text}</p>
+          <div class="options-container">
+            ${optionsHTML}
+          </div>
+        `;
+        container.appendChild(qDiv);
+      });
+    }
+
+    function lockQuiz() {
+      const inputs = document.querySelectorAll("#quiz-page input, #quiz-page button");
+      inputs.forEach(input => input.disabled = true);
+      const labels = document.querySelectorAll(".option-label");
+      labels.forEach(label => label.classList.add("locked"));
+    }
+
+    function submitQuiz(isAuto) {
+      if (isSubmitted) return;
+      const totalQuestions = questions.length;
+
+      if (!isAuto) {
+        let unanswered = 0;
+        for (let i = 0; i < totalQuestions; i++) {
+          const selected = document.querySelector(`input[name="q${i}"]:checked`);
+          if (!selected) unanswered++;
+        }
+        if (unanswered > 0) {
+          alert(`يوجد ${unanswered} سؤال/أسئلة بدون إجابة. يرجى إكمالها قبل التسليم.`);
+          return;
+        }
+      }
+
+      isSubmitted = true;
+      if (timerInterval) clearInterval(timerInterval);
+
+      const endTimeStr = getTimestamp();
+      let correctCount = 0;
+      const wrongQuestions = [];
+
+      for (let i = 0; i < totalQuestions; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        const correctLetter = questions[i].correct;
+
+        if (selected && selected.value === correctLetter) {
+          correctCount++;
+        } else {
+          wrongQuestions.push({
+            number: i + 1,
+            question: questions[i].text
+          });
+        }
+      }
+
+      const resultEntry = {
+        name: currentStudentName,
+        total: totalQuestions,
+        correct: correctCount,
+        score: totalQuestions > 0 ? ((correctCount / totalQuestions) * 100).toFixed(2) : "0.00",
+        startTime: startTimeStr,
+        endTime: endTimeStr
+      };
+
+      const resultText = `النتيجة: ${resultEntry.score}% (${resultEntry.correct}/${resultEntry.total})`;
+
+      fetch(GOOGLESCRIPTURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submitResult",
+          result: resultEntry,
+          wrongQuestions: wrongQuestions
+        })
+      }).catch(e => {
+        console.error("Error submitting result", e);
+      });
+
+      lockQuiz();
+      localStorage.removeItem(STORAGEKEYSTARTTIME);
+
+      setTimeout(() => {
+        hideAllPages();
+        const status = document.getElementById("completion-status");
+        const msg = document.getElementById("completion-msg");
+
+        if (isAuto) {
+          status.textContent = "انتهى الوقت!";
+          status.style.color = "var(--error-color)";
+          msg.innerHTML = "تم إغلاق الاختبار تلقائيًا بسبب انتهاء الوقت.<br>" + resultText;
+        } else {
+          status.textContent = "تم تسليم الاختبار بنجاح";
+          status.style.color = "var(--primary-color)";
+          msg.innerHTML = resultText;
         }
 
-        function loadSettings() {
-            fetch(`${GOOGLE_SCRIPT_URL}?action=getSettings`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.status === 'success' && data.settings) {
-                        quizEnabled = !!data.settings.quizEnabled;
-                    } else {
-                        quizEnabled = true;
-                    }
-                    updateQuizStatusUI();
-                })
-                .catch(() => {
-                    quizEnabled = true;
-                    updateQuizStatusUI();
-                });
+        document.getElementById("completion-page").classList.remove("hidden");
+        window.scrollTo(0, 0);
+      }, 800);
+    }
+
+    /* ========== لوحة المشرف: الدخول وإدارة الأسئلة والنتائج ==========
+       (هذه الأجزاء منسوخة من كودك الأصلي مع الحفاظ عليها كما هي تقريبًا) */
+
+    function checkAdminPassword() {
+      const pass = document.getElementById("admin-password").value;
+      if (pass === ADMINPASSWORD) {
+        hideAllPages();
+        document.getElementById("admin-dashboard").classList.remove("hidden");
+        renderAdminQuestions();
+        loadResultsFromCloud();
+        loadSettings();
+        document.getElementById("admin-password").value = "";
+      } else {
+        alert("كلمة المرور غير صحيحة.");
+      }
+    }
+
+    function renderAdminQuestions() {
+      const tbody = document.getElementById("admin-questions-body");
+      tbody.innerHTML = "";
+      questions.forEach((q, index) => addQuestionRow(q, index));
+    }
+
+    function addQuestionRow(q = { text: "", options: ["", "", "", ""], correct: "A" }, index = null) {
+      const tbody = document.getElementById("admin-questions-body");
+      const row = document.createElement("tr");
+      const rowIndex = (index !== null ? index : tbody.children.length) + 1;
+
+      row.innerHTML = `
+        <td>${rowIndex}</td>
+        <td><textarea class="q-text" rows="2">${q.text}</textarea></td>
+        <td><input type="text" class="q-opt" value="${q.options[0]}"></td>
+        <td><input type="text" class="q-opt" value="${q.options[1]}"></td>
+        <td><input type="text" class="q-opt" value="${q.options[2]}"></td>
+        <td><input type="text" class="q-opt" value="${q.options[3]}"></td>
+        <td>
+          <select class="q-correct">
+            <option value="A" ${q.correct === "A" ? "selected" : ""}>أ</option>
+            <option value="B" ${q.correct === "B" ? "selected" : ""}>ب</option>
+            <option value="C" ${q.correct === "C" ? "selected" : ""}>ج</option>
+            <option value="D" ${q.correct === "D" ? "selected" : ""}>د</option>
+          </select>
+        </td>
+        <td><button class="btn" style="background-color:#dc3545; padding:5px 10px;" onclick="this.parentElement.parentElement.remove()">حذف</button></td>
+      `;
+      tbody.appendChild(row);
+    }
+
+    function addNewQuestionRow() {
+      addQuestionRow();
+    }
+
+    function saveQuestionsToCloud() {
+      const rows = document.querySelectorAll("#admin-questions-body tr");
+      const newQuestions = [];
+
+      rows.forEach(row => {
+        const text = row.querySelector(".q-text").value.trim();
+        const opts = Array.from(row.querySelectorAll(".q-opt")).map(input => input.value.trim());
+        const correct = row.querySelector(".q-correct").value;
+
+        if (text !== "") {
+          newQuestions.push({
+            text,
+            options: opts,
+            correct
+          });
         }
+      });
 
-        function updateQuizStatusUI() {
-            const badge = document.getElementById('quiz-status-badge');
-            const toggleBtn = document.getElementById('toggle-quiz-btn');
-            const statusMsg = document.getElementById('quiz-status-message');
-            const startBtn = document.getElementById('start-quiz-btn');
+      toggleLoading(true);
 
-            if (badge) {
-                if (quizEnabled) {
-                    badge.textContent = "الاختبار مفعل";
-                    badge.classList.remove('status-off');
-                    badge.classList.add('status-on');
-                } else {
-                    badge.textContent = "الاختبار متوقف";
-                    badge.classList.remove('status-on');
-                    badge.classList.add('status-off');
-                }
+      fetch(GOOGLESCRIPTURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveQuestions",
+          questions: newQuestions
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "success") {
+            questions = newQuestions;
+            alert("تم حفظ الأسئلة بنجاح.");
+          } else {
+            throw new Error("Save failed");
+          }
+        })
+        .catch(error => {
+          console.error("Error saving questions:", error);
+          alert("حدث خطأ أثناء حفظ الأسئلة.");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    function loadResultsFromCloud() {
+      toggleLoading(true);
+      fetch(GOOGLESCRIPTURL + "?action=getResults")
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "success") {
+            results = data.results || [];
+            renderAdminResults();
+            renderScoresChart();
+          }
+        })
+        .catch(error => {
+          console.error("Error loading results:", error);
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    function renderAdminResults() {
+      const tbody = document.getElementById("results-body");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+      results.forEach(res => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${res.name}</td>
+          <td>${res.total}</td>
+          <td>${res.correct}</td>
+          <td>${res.score}</td>
+          <td>${res.startTime}</td>
+          <td>${res.endTime}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      populateTeacherFilter();
+    }
+
+    function renderScoresChart() {
+      const canvas = document.getElementById("scoresChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (scoresChartInstance) scoresChartInstance.destroy();
+
+      const labels = results.map(r => r.name);
+      const scores = results.map(r => parseFloat(r.score || "0"));
+
+      scoresChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "نسبة النجاح",
+            data: scores,
+            backgroundColor: "rgba(44, 95, 45, 0.6)",
+            borderColor: "rgba(44, 95, 45, 1)",
+            borderWidth: 1,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: "x",
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            tooltip: { rtl: true }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: "النسبة المئوية" }
+            },
+            x: {
+              title: { display: true, text: "المعلم" }
             }
-
-            if (toggleBtn) {
-                toggleBtn.textContent = quizEnabled ? "إيقاف الاختبار" : "تشغيل الاختبار";
-            }
-
-            if (statusMsg && startBtn) {
-                if (!quizEnabled) {
-                    statusMsg.textContent = "الاختبار متوقف حاليًا، يرجى مراجعة المعلم المسؤول.";
-                    statusMsg.classList.remove('hidden');
-                    startBtn.disabled = true;
-                } else {
-                    statusMsg.textContent = "";
-                    statusMsg.classList.add('hidden');
-                    startBtn.disabled = false;
-                }
-            }
+          }
         }
+      });
+    }
 
-        function toggleQuizEnabled() {
-            const newState = !quizEnabled;
-            toggleLoading(true);
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "setQuizEnabled",
-                    enabled: newState
-                })
-            })
-            .then(async r => {
-                let data;
-                try {
-                    data = await r.json();
-                } catch (err) {
-                    throw new Error("parse_error");
-                }
-                if (data.status === 'success' && data.settings) {
-                    quizEnabled = !!data.settings.quizEnabled;
-                    updateQuizStatusUI();
-                } else {
-                    throw new Error(data && data.message ? data.message : "unknown_error");
-                }
-            })
-            .catch(err => {
-                console.error("toggleQuizEnabled error:", err);
-                if (err.message === 'invalid_json' || err.message === 'parse_error') {
-                    alert("تعذر قراءة رد الخادم. تأكد من أنك تستخدم رابط Google Apps Script الصحيح.");
-                } else {
-                    alert("حدث خطأ أثناء تغيير حالة الاختبار.");
-                }
-            })
-            .finally(() => toggleLoading(false));
+    function exportQuestionsJSON() {
+      const blob = new Blob([JSON.stringify(questions, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "taqrib_questions.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function importQuestionsJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            questions = imported;
+            renderAdminQuestions();
+            alert("تم استيراد الأسئلة بنجاح.");
+          } else {
+            alert("صيغة الملف غير صحيحة.");
+          }
+        } catch (err) {
+          alert("حدث خطأ أثناء قراءة ملف JSON.");
         }
-
-        function loadQuestionsFromCloud() {
-            toggleLoading(true);
-            fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success' && data.questions) {
-                        questions = data.questions;
-                    } else if (data.message === 'quiz_disabled') {
-                        quizEnabled = false;
-                        updateQuizStatusUI();
-                    } else {
-                        throw new Error("Failed to load questions");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error loading questions:", error);
-                    if (quizEnabled) {
-                        alert("تعذر تحميل الأسئلة من الخادم، يرجى مراجعة المعلم.");
-                    }
-                })
-                .finally(() => {
-                    toggleLoading(false);
-                });
-        }
-
-        function hideAllPages() {
-            ['student-info-page', 'quiz-page', 'completion-page', 'admin-login-page', 'admin-dashboard']
-                .forEach(id => document.getElementById(id).classList.add('hidden'));
-        }
-
-        function showStudentPage() {
-            hideAllPages();
-            document.getElementById('student-info-page').classList.remove('hidden');
-            loadSettings();
-        }
-
-        function showAdminLogin() {
-            hideAllPages();
-            document.getElementById('admin-login-page').classList.remove('hidden');
-        }
-
-        function getTimestamp() {
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const h = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            const s = String(now.getSeconds()).padStart(2, '0');
-            return `${y}-${m}-${d} ${h}:${min}:${s}`;
-        }
-
-        function calculateTimeLeftFromStorage() {
-            const storedStart = localStorage.getItem(STORAGE_KEY_START_TIME);
-            if (!storedStart) return QUIZ_DURATION_SECONDS;
-            const startTimeMs = parseInt(storedStart, 10);
-            const now = Date.now();
-            const elapsedSeconds = Math.floor((now - startTimeMs) / 1000);
-            const remaining = QUIZ_DURATION_SECONDS - elapsedSeconds;
-            return remaining > 0 ? remaining : 0;
-        }
-
-        function startQuiz() {
-            if (!quizEnabled) {
-                alert("الاختبار متوقف حاليًا، لا يمكن البدء.");
-                return;
-            }
-
-            const nameInput = document.getElementById('student-name');
-            const name = nameInput.value.trim();
-
-            if (!name) {
-                alert("يرجى إدخال اسم مدرس الحلقة أولاً.");
-                return;
-            }
-
-            if (questions.length === 0) {
-                alert("لا توجد أسئلة حالياً. يرجى مراجعة المعلم المسؤول.");
-                return;
-            }
-
-            currentStudentName = name;
-            startTimeStr = getTimestamp();
-            isSubmitted = false;
-
-            if (!localStorage.getItem(STORAGE_KEY_START_TIME)) {
-                localStorage.setItem(STORAGE_KEY_START_TIME, Date.now().toString());
-            }
-
-            timeLeft = calculateTimeLeftFromStorage();
-
-            hideAllPages();
-            document.getElementById('quiz-page').classList.remove('hidden');
-            renderQuiz();
-            startTimer();
-            window.scrollTo(0, 0);
-        }
-
-        function startTimer() {
-            const display = document.getElementById('time-display');
-            const timerContainer = document.getElementById('quiz-timer');
-            if (timerInterval) clearInterval(timerInterval);
-
-            timeLeft = calculateTimeLeftFromStorage();
-
-            if (timeLeft <= 0) {
-                display.textContent = "0:00";
-                timerContainer.classList.add('timer-warning');
-                submitQuiz(true);
-                return;
-            }
-
-            timerInterval = setInterval(() => {
-                timeLeft = calculateTimeLeftFromStorage();
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                display.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
-                if (timeLeft <= 300) timerContainer.classList.add('timer-warning');
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    submitQuiz(true);
-                }
-            }, 1000);
-        }
-
-        function renderQuiz() {
-            const container = document.getElementById('questions-container');
-            container.innerHTML = '';
-            questions.forEach((q, index) => {
-                const qDiv = document.createElement('div');
-                qDiv.className = 'question-card';
-                let optionsHTML = '';
-                const labels = ['A', 'B', 'C', 'D'];
-                q.options.forEach((opt, i) => {
-                    optionsHTML += `
-                        <label class="option-label">
-                            <input type="radio" name="q${index}" value="${labels[i]}">
-                            <span style="margin-right: 5px;">${labels[i]}: ${opt}</span>
-                        </label>
-                    `;
-                });
-                qDiv.innerHTML = `<p><strong>سؤال ${index + 1}:</strong> ${q.text}</p><div class="options-container">${optionsHTML}</div>`;
-                container.appendChild(qDiv);
-            });
-        }
-
-        function lockQuiz() {
-            const inputs = document.querySelectorAll('#quiz-page input, #quiz-page button');
-            inputs.forEach(input => input.disabled = true);
-            const labels = document.querySelectorAll('.option-label');
-            labels.forEach(label => label.classList.add('locked'));
-        }
-
-        function submitQuiz(isAuto) {
-            if (isSubmitted) return;
-
-            const totalQuestions = questions.length;
-
-            if (!isAuto) {
-                let unanswered = 0;
-                for (let i = 0; i < totalQuestions; i++) {
-                    const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                    if (!selected) unanswered++;
-                }
-                if (unanswered > 0) {
-                    alert(`لم تجب على ${unanswered} سؤال/أسئلة. يرجى الإجابة على جميع الأسئلة قبل إرسال الاختبار.`);
-                    return;
-                }
-            }
-
-            isSubmitted = true;
-            if (timerInterval) clearInterval(timerInterval);
-
-            const endTimeStr = getTimestamp();
-            let correctCount = 0;
-            const wrongQuestions = [];
-
-            for (let i = 0; i < totalQuestions; i++) {
-                const selected = document.querySelector(`input[name="q${i}"]:checked`);
-                const correctLetter = questions[i].correct;
-
-                if (selected && selected.value === correctLetter) {
-                    correctCount++;
-                } else {
-                    wrongQuestions.push({
-                        number: i + 1,
-                        question: questions[i].text
-                    });
-                }
-            }
-
-            const resultEntry = {
-                name: currentStudentName,
-                total: totalQuestions,
-                correct: correctCount,
-                score: totalQuestions > 0
-                    ? ((correctCount / totalQuestions) * 100).toFixed(2)
-                    : "0.00",
-                startTime: startTimeStr,
-                endTime: endTimeStr
-            };
-
-            const resultText =
-                `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "submitResult",
-                    result: resultEntry,
-                    wrongQuestions: wrongQuestions
-                })
-            }).catch(e => console.error("Error submitting result:", e));
-
-            lockQuiz();
-            localStorage.removeItem(STORAGE_KEY_START_TIME);
-
-            setTimeout(() => {
-                hideAllPages();
-                const status = document.getElementById('completion-status');
-                const msg = document.getElementById('completion-msg');
-
-                if (isAuto) {
-                    status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
-                    status.style.color = "var(--error-color)";
-                    msg.innerHTML =
-                        `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}`;
-                } else {
-                    status.textContent = "تم إرسال إجاباتك بنجاح";
-                    status.style.color = "var(--primary-color)";
-                    msg.innerHTML =
-                        `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}`;
-                }
-
-                document.getElementById('completion-page').classList.remove('hidden');
-                window.scrollTo(0, 0);
-            }, 800);
-        }
-
-        function checkAdminPassword() {
-            const pass = document.getElementById('admin-password').value;
-            if (pass === ADMIN_PASSWORD) {
-                hideAllPages();
-                document.getElementById('admin-dashboard').classList.remove('hidden');
-                renderAdminQuestions();
-                loadResultsFromCloud();
-                loadSettings();
-                document.getElementById('admin-password').value = '';
-            } else {
-                alert("كلمة المرور غير صحيحة!");
-            }
-        }
-
-        function renderAdminQuestions() {
-            const tbody = document.getElementById('admin-questions-body');
-            tbody.innerHTML = '';
-            questions.forEach((q, index) => addQuestionRow(q, index));
-        }
-
-        function addQuestionRow(
-            q = { text: '', options: ['', '', '', ''], correct: 'A' },
-            index = null
-        ) {
-            const tbody = document.getElementById('admin-questions-body');
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><textarea class="q-text" rows="2">${q.text}</textarea></td>
-                <td><input type="text" class="q-opt" value="${q.options[0]}"></td>
-                <td><input type="text" class="q-opt" value="${q.options[1]}"></td>
-                <td><input type="text" class="q-opt" value="${q.options[2]}"></td>
-                <td><input type="text" class="q-opt" value="${q.options[3]}"></td>
-                <td>
-                    <select class="q-correct">
-                        <option value="A" ${q.correct === 'A' ? 'selected' : ''}>أ</option>
-                        <option value="B" ${q.correct === 'B' ? 'selected' : ''}>ب</option>
-                        <option value="C" ${q.correct === 'C' ? 'selected' : ''}>ج</option>
-                        <option value="D" ${q.correct === 'D' ? 'selected' : ''}>د</option>
-                    </select>
-                </td>
-                <td>
-                    <button class="btn" style="background-color:#dc3545; padding: 5px 10px;"
-                        onclick="this.parentElement.parentElement.remove()">
-                        حذف
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
-
-        function addNewQuestionRow() {
-            addQuestionRow();
-        }
-
-        function saveQuestionsToCloud() {
-            const rows = document.querySelectorAll('#admin-questions-body tr');
-            const newQuestions = [];
-            rows.forEach(row => {
-                const text = row.querySelector('.q-text').value.trim();
-                const opts = Array
-                    .from(row.querySelectorAll('.q-opt'))
-                    .map(input => input.value.trim());
-                const correct = row.querySelector('.q-correct').value;
-                if (text !== "") newQuestions.push({ text, options: opts, correct });
-            });
-
-            toggleLoading(true);
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "saveQuestions", questions: newQuestions })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    questions = newQuestions;
-                    alert("تم حفظ الأسئلة بنجاح في الخادم.");
-                } else {
-                    throw new Error("Save failed");
-                }
-            })
-            .catch(error => {
-                console.error("Error saving questions:", error);
-                alert("حدث خطأ أثناء حفظ الأسئلة، حاول مرة أخرى.");
-            })
-            .finally(() => {
-                toggleLoading(false);
-            });
-        }
-
-        function loadResultsFromCloud() {
-            toggleLoading(true);
-            fetch(`${GOOGLE_SCRIPT_URL}?action=getResults`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success' && data.results) {
-                        results = data.results;
-                        renderAdminResults();
-                        renderScoresChart();
-                    }
-                })
-                .catch(error => console.error("Error loading results:", error))
-                .finally(() => toggleLoading(false));
-        }
-
-        function renderAdminResults() {
-            const tbody = document.getElementById('results-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            results.forEach(res => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${res.name}</td>
-                    <td>${res.total}</td>
-                    <td>${res.correct}</td>
-                    <td>${res.score}%</td>
-                    <td>${res.startTime}</td>
-                    <td>${res.endTime}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function renderScoresChart() {
-            const canvas = document.getElementById('scoresChart');
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-
-            if (scoresChartInstance) {
-                scoresChartInstance.destroy();
-            }
-
-            const labels = results.map(r => r.name || 'بدون اسم');
-            const scores = results.map(r => parseFloat(r.score) || 0);
-
-            scoresChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'النسبة المئوية لكل مدرس',
-                        data: scores,
-                        backgroundColor: 'rgba(44, 95, 45, 0.6)',
-                        borderColor: 'rgba(44, 95, 45, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'x',
-                    responsive: true,
-                    plugins: {
-                        legend: { display: true },
-                        tooltip: { rtl: true }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: { display: true, text: 'النسبة المئوية' }
-                        },
-                        x: {
-                            title: { display: true, text: 'مدرسو الحلقات' }
-                        }
-                    }
-                }
-            });
-        }
-
-        function exportQuestionsJSON() {
-            const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = "taqrib_questions.json";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function importQuestionsJSON(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (Array.isArray(imported)) {
-                        questions = imported;
-                        renderAdminQuestions();
-                        alert("تم استيراد الأسئلة محلياً. يرجى الضغط على 'حفظ الأسئلة في الخادم' لاعتمادها.");
-                    }
-                } catch (err) {
-                    alert("خطأ في قراءة الملف.");
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        function exportResultsToCSV() {
-            if (results.length === 0) {
-                alert("لا توجد نتائج مسجلة.");
-                return;
-            }
-            let csvContent =
-                "\uFEFFsep=,\nاسم مدرس الحلقة,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
-            results.forEach(res => {
-                const name = (res.name || "").replace(/,/g, '');
-                csvContent +=
-                    `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "taqrib_quiz_results.csv";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-
-        function populateTeacherFilter() {
-            const select = document.getElementById('teacher-name-filter');
-            if (!select) return;
-
-            const currentValue = select.value;
-            select.innerHTML = '<option value="">-- اختر مدرساً --</option>';
-
-            const namesSet = new Set();
-            results.forEach(res => {
-                if (res.name) namesSet.add(res.name);
-            });
-
-            Array.from(namesSet).forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
-            });
-
-            if (currentValue && namesSet.has(currentValue)) {
-                select.value = currentValue;
-            }
-        }
-
-        const _originalRenderAdminResults = renderAdminResults;
-        renderAdminResults = function() {
-            _originalRenderAdminResults();
-            populateTeacherFilter();
-        };
-
-        function loadTeacherWrongQuestions() {
-            const select = document.getElementById('teacher-name-filter');
-            const teacherName = select ? select.value : '';
-            const container = document.getElementById('teacher-wrong-questions');
-
-            if (!teacherName) {
-                alert("يرجى اختيار اسم مدرس الحلقة أولاً.");
-                return;
-            }
-
-            container.innerHTML = "جاري تحميل الأخطاء...";
-
-            fetch(`${GOOGLE_SCRIPT_URL}?action=getTeacherWrongQuestions&name=${encodeURIComponent(teacherName)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== 'success') {
-                        throw new Error("Failed to load teacher wrong questions");
-                    }
-                    const list = data.wrongQuestions || [];
-                    if (list.length === 0) {
-                        container.innerHTML = `<p>لا توجد أسئلة خاطئة مسجلة لهذا المدرس (${teacherName}).</p>`;
-                        return;
-                    }
-
-                    let html = `<p>عدد الأسئلة الخاطئة المسجلة للمدرس <strong>${teacherName}</strong>: ${list.length}</p>`;
-                    html += '<ul style="line-height: 1.8;">';
-                    list.forEach(item => {
-                        html += `<li>سؤال رقم ${item.number}: ${item.question}</li>`;
-                    });
-                    html += '</ul>';
-                    container.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error(err);
-                    container.innerHTML = "<p>حدث خطأ أثناء تحميل الأخطاء.</p>";
-                });
-        }
-
-        function exportAllWrongQuestionsToCSV() {
-            toggleLoading(true);
-            fetch(`${GOOGLE_SCRIPT_URL}?action=getAllWrongQuestions`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== 'success') {
-                        throw new Error("Failed to load all wrong questions");
-                    }
-                    const list = data.wrongQuestions || [];
-                    if (list.length === 0) {
-                        alert("لا توجد أخطاء مسجلة حتى الآن.");
-                        return;
-                    }
-
-                    let csvContent =
-                        "\uFEFFsep=,\nاسم المدرس,رقم السؤال,نص السؤال,الوقت\n";
-                    list.forEach(item => {
-                        const name = (item.name || "").replace(/,/g, '');
-                        const num = item.number || "";
-                        const q = (item.question || "").replace(/,/g, ' ');
-                        const ts = item.timestamp || "";
-                        csvContent += `${name},${num},${q},${ts}\n`;
-                    });
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = "taqrib_wrong_questions.csv";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                })
-                .catch(err => {
-                    console.error("Error exporting wrong questions:", err);
-                    alert("حدث خطأ أثناء تصدير الأخطاء.");
-                })
-                .finally(() => {
-                    toggleLoading(false);
-                });
-        }
-    </script>
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
+    function exportResultsToCSV() {
+      if (results.length === 0) {
+        alert("لا توجد نتائج للتصدير.");
+        return;
+      }
+      let csvContent = "الاسم,عدد الأسئلة,عدد الصحيحة,النتيجة%,وقت البداية,وقت النهاية\n";
+      results.forEach(res => {
+        const name = (res.name || "").replace(/,/g, " ");
+        csvContent += `${name},${res.total},${res.correct},${res.score},${res.startTime},${res.endTime}\n`;
+      });
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "taqrib_quiz_results.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function populateTeacherFilter() {
+      const select = document.getElementById("teacher-name-filter");
+      if (!select) return;
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">-- اختر معلمًا --</option>';
+      const namesSet = new Set();
+      results.forEach(res => {
+        if (res.name) namesSet.add(res.name);
+      });
+      Array.from(namesSet).forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      if (currentValue && namesSet.has(currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    function loadTeacherWrongQuestions() {
+      const select = document.getElementById("teacher-name-filter");
+      const teacherName = select ? select.value : "";
+      const container = document.getElementById("teacher-wrong-questions");
+      if (!teacherName) {
+        alert("يرجى اختيار اسم المعلم أولاً.");
+        return;
+      }
+      container.innerHTML = "جاري التحميل...";
+      fetch(GOOGLESCRIPTURL + "?action=getTeacherWrongQuestions&name=" + encodeURIComponent(teacherName))
+        .then(response => response.json())
+        .then(data => {
+          if (data.status !== "success") throw new Error("Failed to load teacher wrong questions");
+          const list = data.wrongQuestions || [];
+          if (list.length === 0) {
+            container.innerHTML = `<p>لا توجد أسئلة خاطئة مسجلة للمعلم: ${teacherName}.</p>`;
+            return;
+          }
+          let html = `<p><strong>${teacherName}</strong> - عدد الأسئلة الخاطئة: ${list.length}</p>`;
+          html += `<ul style="line-height:1.8;">`;
+          list.forEach(item => {
+            html += `<li>س${item.number}: ${item.question}</li>`;
+          });
+          html += `</ul>`;
+          container.innerHTML = html;
+        })
+        .catch(err => {
+          console.error(err);
+          container.innerHTML = `<p>حدث خطأ أثناء تحميل الأسئلة الخاطئة.</p>`;
+        });
+    }
+
+    function exportAllWrongQuestionsToCSV() {
+      toggleLoading(true);
+      fetch(GOOGLESCRIPTURL + "?action=getAllWrongQuestions")
+        .then(response => response.json())
+        .then(data => {
+          if (data.status !== "success") throw new Error("Failed to load all wrong questions");
+          const list = data.wrongQuestions || [];
+          if (list.length === 0) {
+            alert("لا توجد أسئلة خاطئة للتصدير.");
+            return;
+          }
+          let csvContent = "الاسم,رقم السؤال,نص السؤال,الوقت\n";
+          list.forEach(item => {
+            const name = (item.name || "").replace(/,/g, " ");
+            const num = item.number || "";
+            const q = (item.question || "").replace(/,/g, " ");
+            const ts = item.timestamp || "";
+            csvContent += `${name},${num},${q},${ts}\n`;
+          });
+          const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "taqrib_wrong_questions.csv";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+          console.error("Error exporting wrong questions:", err);
+          alert("حدث خطأ أثناء تصدير الأسئلة الخاطئة.");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+  </script>
 </body>
 </html>
