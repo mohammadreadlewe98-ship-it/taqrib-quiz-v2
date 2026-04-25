@@ -391,34 +391,23 @@
       else overlay.classList.add("hidden");
     }
 
-   function loadQuestionsFromCloud() {
-    showLoading('جاري تحميل الأسئلة من السحابة...');
-    
-    const script = document.createElement('script');
-    const callbackName = 'handleQuestionsResponse';
-    
-    window[callbackName] = function(data) {
-        if (data.status === "success") {
-            questions = data.questions;
-            if (questions.length > 0) {
-                showSection('quiz');
-                startQuiz();
-            } else {
-                alert('لا توجد أسئلة محملة. يرجى إضافة الأسئلة أولاً.');
-                showSection('admin');
-            }
-        } else {
-            alert('حدث خطأ: ' + data.message);
-        }
-        hideLoading();
-        document.body.removeChild(script);
-        delete window[callbackName];
-    };
-    
-    script.src = GOOGLESCRIPTURL + '?action=getQuestions&callback=' + callbackName;
-    document.body.appendChild(script);
+function loadQuestionsFromCloud() {
+  const script = document.createElement('script');
+  const callbackName = 'handleQuestionsResponse_' + Date.now();
+  
+  window[callbackName] = function(data) {
+    if (data.status === "success") {
+      questions = data.questions;
+    } else {
+      alert('حدث خطأ: ' + data.message);
+    }
+    document.body.removeChild(script);
+    delete window[callbackName];
+  };
+  
+  script.src = GOOGLESCRIPTURL + '?action=getQuestions&callback=' + callbackName;
+  document.body.appendChild(script);
 }
-
     function hideAllPages() {
       ["student-info-page", "quiz-page", "completion-page", "admin-login-page", "admin-dashboard"]
         .forEach(id => document.getElementById(id).classList.add("hidden"));
