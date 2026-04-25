@@ -224,24 +224,6 @@
       font-weight: bold;
     }
 
-    .status-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      margin-right: 10px;
-    }
-
-    .status-on {
-      background-color: #d4edda;
-      color: #155724;
-    }
-
-    .status-off {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-
     @media (max-width: 600px) {
       .container {
         width: 95%;
@@ -267,8 +249,6 @@
   <!-- صفحة بيانات المعلم / البداية -->
   <div id="student-info-page" class="container">
     <h2>بيانات المعلم</h2>
-
-    <div id="quiz-status-message" class="form-group hidden" style="color: var(--error-color); font-weight: bold;"></div>
 
     <div class="form-group">
       <label for="student-name">اسم المعلم</label>
@@ -310,16 +290,7 @@
 
   <!-- لوحة المشرف -->
   <div id="admin-dashboard" class="container hidden" style="max-width: 1000px;">
-    <h2>
-      <span id="quiz-status-badge" class="status-badge"></span>
-      لوحة التحكم بالاختبار
-    </h2>
-
-    <div class="admin-actions">
-      <button id="toggle-quiz-btn" class="btn" onclick="toggleQuizEnabled()"></button>
-    </div>
-
-    <hr style="margin: 30px 0;">
+    <h2>لوحة التحكم بالاختبار</h2>
 
     <h2>إدارة الأسئلة</h2>
     <div style="overflow-x: auto;">
@@ -396,8 +367,7 @@
   </div>
 
   <script>
-    // رابط Web App
-    const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
+    const GOOGLESCRIPTURL = "https://script.google.com/macros/s/AKfycbxRPh-9RgYLbekE-zLvdlJ0EM7UkyRMD4PSJfJ2hJ_fK7AOhrG0B1GYPraMplCC8Udb8Q/exec";
     const ADMINPASSWORD = "98989898";
     const QUIZDURATIONSECONDS = 30 * 60;
     const STORAGEKEYSTARTTIME = "taqrib_quiz_start_time";
@@ -410,10 +380,8 @@
     let currentStudentName = "";
     let isSubmitted = false;
     let scoresChartInstance = null;
-    let quizEnabled = true;
 
     window.addEventListener("DOMContentLoaded", () => {
-      loadSettings();
       loadQuestionsFromCloud();
     });
 
@@ -423,116 +391,25 @@
       else overlay.classList.add("hidden");
     }
 
-    /* ========== الإعدادات وحالة الاختبار ========== */
-
-    function loadSettings() {
-      fetch(GOOGLESCRIPTURL + "?action=getSettings")
-        .then(r => r.json())
-        .then(data => {
-          if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
-            quizEnabled = !!data.settings.quizEnabled;
-          }
-          updateQuizStatusUI();
-        })
-        .catch(() => {
-          updateQuizStatusUI();
-        });
-    }
-
-    function updateQuizStatusUI() {
-      const badge = document.getElementById("quiz-status-badge");
-      const toggleBtn = document.getElementById("toggle-quiz-btn");
-      const statusMsg = document.getElementById("quiz-status-message");
-      const startBtn = document.getElementById("start-quiz-btn");
-
-      if (badge) {
-        if (quizEnabled) {
-          badge.textContent = "الاختبار مفتوح";
-          badge.classList.remove("status-off");
-          badge.classList.add("status-on");
-        } else {
-          badge.textContent = "الاختبار متوقف";
-          badge.classList.remove("status-on");
-          badge.classList.add("status-off");
-        }
-      }
-
-      if (toggleBtn) {
-        toggleBtn.textContent = quizEnabled ? "إيقاف استقبال الإجابات" : "تشغيل استقبال الإجابات";
-      }
-
-      if (statusMsg && startBtn) {
-        if (!quizEnabled) {
-          statusMsg.textContent = "الاختبار متوقف حاليًا. لا يمكن البدء حتى يعيده المشرف.";
-          statusMsg.classList.remove("hidden");
-          startBtn.disabled = true;
-        } else {
-          statusMsg.textContent = "";
-          statusMsg.classList.add("hidden");
-          startBtn.disabled = false;
-        }
-      }
-    }
-
-    function toggleQuizEnabled() {
-      const newState = !quizEnabled;
-      toggleLoading(true);
-
-      fetch(GOOGLESCRIPTURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "setQuizEnabled",
-          enabled: newState
-        })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.status === "success" && data.settings && typeof data.settings.quizEnabled !== "undefined") {
-            quizEnabled = !!data.settings.quizEnabled;
-          } else {
-            quizEnabled = newState;
-          }
-          updateQuizStatusUI();
-        })
-        .catch(() => {
-          alert("تعذر تغيير حالة الاختبار، تحقق من Apps Script.");
-        })
-        .finally(() => toggleLoading(false));
-    }
-
-    /* ========== تحميل الأسئلة ========== */
-
     function loadQuestionsFromCloud() {
       toggleLoading(true);
-
       fetch(GOOGLESCRIPTURL + "?action=getQuestions")
-        .then(response => {
-          console.log("getQuestions status:", response.status);
-          return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-          console.log("getQuestions data:", data);
           if (data.status === "success") {
             questions = data.questions || [];
-            console.log("questions length after load:", questions.length);
-          } else if (data.message === "quiz_disabled") {
-            quizEnabled = false;
-            updateQuizStatusUI();
           } else {
-            alert("حدث خطأ غير متوقع أثناء تحميل الأسئلة: " + (data.message || ""));
+            throw new Error("Failed to load questions");
           }
         })
         .catch(error => {
           console.error("Error loading questions:", error);
-          alert("تعذر تحميل الأسئلة حاليًا. تحقق من الاتصال أو من إعدادات Web App.");
+          alert("تعذر تحميل الأسئلة. تحقق من الاتصال أو من إعدادات Web App.");
         })
         .finally(() => {
           toggleLoading(false);
         });
     }
-
-    /* ========== التنقل بين الصفحات ========== */
 
     function hideAllPages() {
       ["student-info-page", "quiz-page", "completion-page", "admin-login-page", "admin-dashboard"]
@@ -542,15 +419,12 @@
     function showStudentPage() {
       hideAllPages();
       document.getElementById("student-info-page").classList.remove("hidden");
-      loadSettings();
     }
 
     function showAdminLogin() {
       hideAllPages();
       document.getElementById("admin-login-page").classList.remove("hidden");
     }
-
-    /* ========== الوقت ========== */
 
     function getTimestamp() {
       const now = new Date();
@@ -573,14 +447,7 @@
       return remaining > 0 ? remaining : 0;
     }
 
-    /* ========== منطق الاختبار ========== */
-
-    async function startQuiz() {
-      if (!quizEnabled) {
-        alert("الاختبار متوقف حاليًا. يرجى مراجعة المشرف.");
-        return;
-      }
-
+    function startQuiz() {
       const nameInput = document.getElementById("student-name");
       const name = nameInput.value.trim();
 
@@ -589,35 +456,8 @@
         return;
       }
 
-      // إذا كانت الأسئلة فارغة هنا، نحاول تحميلها مرّة أخرى مباشرة مع تسجيل ما يحدث
       if (questions.length === 0) {
-        console.log("questions is empty before startQuiz, reloading...");
-        try {
-          const r = await fetch(GOOGLESCRIPTURL + "?action=getQuestions");
-          console.log("reload getQuestions status:", r.status);
-          const data = await r.json();
-          console.log("reload getQuestions data:", data);
-          if (data.status === "success") {
-            questions = data.questions || [];
-            console.log("questions length after reload:", questions.length);
-          } else if (data.message === "quiz_disabled") {
-            quizEnabled = false;
-            updateQuizStatusUI();
-            alert("الاختبار متوقف حاليًا من إعدادات المشرف.");
-            return;
-          } else {
-            alert("خطأ أثناء إعادة تحميل الأسئلة: " + (data.message || ""));
-            return;
-          }
-        } catch (err) {
-          console.error("reload in startQuiz error:", err);
-          alert("تعذر تحميل الأسئلة من السيرفر. تحقق من الاتصال أو من صلاحيات Web App.");
-          return;
-        }
-      }
-
-      if (questions.length === 0) {
-        alert("لا توجد أسئلة متاحة حاليًا بعد المحاولات. يرجى مراجعة المشرف.");
+        alert("لا توجد أسئلة متاحة حاليًا. يرجى مراجعة المشرف.");
         return;
       }
 
@@ -789,8 +629,6 @@
       }, 800);
     }
 
-    /* ========== لوحة المشرف: الدخول وإدارة الأسئلة والنتائج ========== */
-
     function checkAdminPassword() {
       const pass = document.getElementById("admin-password").value;
       if (pass === ADMINPASSWORD) {
@@ -798,7 +636,6 @@
         document.getElementById("admin-dashboard").classList.remove("hidden");
         renderAdminQuestions();
         loadResultsFromCloud();
-        loadSettings();
         document.getElementById("admin-password").value = "";
       } else {
         alert("كلمة المرور غير صحيحة.");
