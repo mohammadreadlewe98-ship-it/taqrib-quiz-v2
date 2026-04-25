@@ -6,7 +6,7 @@
     <title>اختبار مادة تقريب القرآن</title>
     <!-- 
       TAQRIB AL-QURAN QUIZ - GOOGLE APPS SCRIPT BACKEND VERSION
-      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel, Score Chart.
+      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel, Score Chart, Wrong Questions Logging.
     -->
     <style>
         :root {
@@ -354,7 +354,7 @@
 
     <script>
         // --- Global Configuration ---
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3piQy720i25oP6odGQix5D0D9uEAPZP51leBSiS-zqVxpcTJVxjPVyM0pkUCtjz0HzQ/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
         const ADMIN_PASSWORD = "98989898";
         const QUIZ_DURATION_SECONDS = 30 * 60; // 30 دقيقة
         const STORAGE_KEY_START_TIME = "taqrib_quiz_start_time";
@@ -596,4 +596,259 @@
                 const status = document.getElementById('completion-status');
                 const msg = document.getElementById('completion-msg');
 
-           
+                if (isAuto) {
+                    status.textContent = "انتهى الوقت، تم إرسال الاختبار تلقائياً";
+                    status.style.color = "var(--error-color)";
+                    msg.innerHTML =
+                        `تم إغلاق الاختبار وإرسال إجاباتك الحالية بنجاح.<br>${resultText}`;
+                } else {
+                    status.textContent = "تم إرسال إجاباتك بنجاح";
+                    status.style.color = "var(--primary-color)";
+                    msg.innerHTML =
+                        `شكرًا لك، تم تسجيل إجاباتك بنجاح في النظام.<br>${resultText}`;
+                }
+
+                document.getElementById('completion-page').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }, 800);
+        }
+
+        // --- Admin Logic ---
+        function checkAdminPassword() {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === ADMIN_PASSWORD) {
+                hideAllPages();
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                renderAdminQuestions();
+                loadResultsFromCloud();
+                document.getElementById('admin-password').value = '';
+            } else {
+                alert("كلمة المرور غير صحيحة!");
+            }
+        }
+
+        function renderAdminQuestions() {
+            const tbody = document.getElementById('admin-questions-body');
+            tbody.innerHTML = '';
+            questions.forEach((q, index) => addQuestionRow(q, index));
+        }
+
+        function addQuestionRow(
+            q = { text: '', options: ['', '', '', ''], correct: 'A' },
+            index = null
+        ) {
+            const tbody = document.getElementById('admin-questions-body');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><textarea class="q-text" rows="2">${q.text}</textarea></td>
+                <td><input type="text" class="q-opt" value="${q.options[0]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[1]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[2]}"></td>
+                <td><input type="text" class="q-opt" value="${q.options[3]}"></td>
+                <td>
+                    <select class="q-correct">
+                        <option value="A" ${q.correct === 'A' ? 'selected' : ''}>أ</option>
+                        <option value="B" ${q.correct === 'B' ? 'selected' : ''}>ب</option>
+                        <option value="C" ${q.correct === 'C' ? 'selected' : ''}>ج</option>
+                        <option value="D" ${q.correct === 'D' ? 'selected' : ''}>د</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="background-color:#dc3545; padding: 5px 10px;"
+                        onclick="this.parentElement.parentElement.remove()">
+                        حذف
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function addNewQuestionRow() {
+            addQuestionRow();
+        }
+
+        // --- Cloud Integration: Save Questions ---
+        function saveQuestionsToCloud() {
+            const rows = document.querySelectorAll('#admin-questions-body tr');
+            const newQuestions = [];
+            rows.forEach(row => {
+                const text = row.querySelector('.q-text').value.trim();
+                const opts = Array
+                    .from(row.querySelectorAll('.q-opt'))
+                    .map(input => input.value.trim());
+                const correct = row.querySelector('.q-correct').value;
+                if (text !== "") newQuestions.push({ text, options: opts, correct });
+            });
+
+            toggleLoading(true);
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "saveQuestions", questions: newQuestions })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    questions = newQuestions;
+                    alert("تم حفظ الأسئلة بنجاح في الخادم.");
+                } else {
+                    throw new Error("Save failed");
+                }
+            })
+            .catch(error => {
+                console.error("Error saving questions:", error);
+                alert("حدث خطأ أثناء حفظ الأسئلة، حاول مرة أخرى.");
+            })
+            .finally(() => {
+                toggleLoading(false);
+            });
+        }
+
+        // --- Cloud Integration: Load Results ---
+        function loadResultsFromCloud() {
+            toggleLoading(true);
+            fetch(`${GOOGLE_SCRIPT_URL}?action=getResults`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.results) {
+                        results = data.results;
+                        renderAdminResults();
+                        renderScoresChart();
+                    }
+                })
+                .catch(error => console.error("Error loading results:", error))
+                .finally(() => toggleLoading(false));
+        }
+
+        function renderAdminResults() {
+            const tbody = document.getElementById('results-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            results.forEach(res => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${res.name}</td>
+                    <td>${res.total}</td>
+                    <td>${res.correct}</td>
+                    <td>${res.score}%</td>
+                    <td>${res.startTime}</td>
+                    <td>${res.endTime}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // --- Render Scores Chart (Chart.js) ---
+        function renderScoresChart() {
+            const canvas = document.getElementById('scoresChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            if (scoresChartInstance) {
+                scoresChartInstance.destroy();
+            }
+
+            const labels = results.map(r => r.name || 'بدون اسم');
+            const scores = results.map(r => parseFloat(r.score) || 0);
+
+            scoresChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'النسبة المئوية لكل مدرس',
+                        data: scores,
+                        backgroundColor: 'rgba(44, 95, 45, 0.6)',
+                        borderColor: 'rgba(44, 95, 45, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'x',
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        tooltip: {
+                            rtl: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'النسبة المئوية'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'مدرسو الحلقات'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportQuestionsJSON() {
+            const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = "taqrib_questions.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importQuestionsJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        questions = imported;
+                        renderAdminQuestions();
+                        alert("تم استيراد الأسئلة محلياً. يرجى الضغط على 'حفظ الأسئلة في الخادم' لاعتمادها.");
+                    }
+                } catch (err) {
+                    alert("خطأ في قراءة الملف.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function exportResultsToCSV() {
+            if (results.length === 0) {
+                alert("لا توجد نتائج مسجلة.");
+                return;
+            }
+            let csvContent =
+                "\uFEFFsep=,\nاسم مدرس الحلقة,إجمالي الأسئلة,الإجابات الصحيحة,النسبة المئوية,وقت البدء,وقت الانتهاء\n";
+            results.forEach(res => {
+                const name = (res.name || "").replace(/,/g, '');
+                csvContent +=
+                    `${name},${res.total},${res.correct},${res.score}%,${res.startTime},${res.endTime}\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "taqrib_quiz_results.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
