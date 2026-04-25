@@ -391,25 +391,33 @@
       else overlay.classList.add("hidden");
     }
 
-    function loadQuestionsFromCloud() {
-      toggleLoading(true);
-      fetch(GOOGLESCRIPTURL + "?action=getQuestions")
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === "success") {
-            questions = data.questions || [];
-          } else {
-            throw new Error("Failed to load questions");
-          }
-        })
-        .catch(error => {
-          console.error("Error loading questions:", error);
-          alert("تعذر تحميل الأسئلة. تحقق من الاتصال أو من إعدادات Web App.");
-        })
-        .finally(() => {
-          toggleLoading(false);
-        });
-    }
+   function loadQuestionsFromCloud() {
+    showLoading('جاري تحميل الأسئلة من السحابة...');
+    
+    const script = document.createElement('script');
+    const callbackName = 'handleQuestionsResponse';
+    
+    window[callbackName] = function(data) {
+        if (data.status === "success") {
+            questions = data.questions;
+            if (questions.length > 0) {
+                showSection('quiz');
+                startQuiz();
+            } else {
+                alert('لا توجد أسئلة محملة. يرجى إضافة الأسئلة أولاً.');
+                showSection('admin');
+            }
+        } else {
+            alert('حدث خطأ: ' + data.message);
+        }
+        hideLoading();
+        document.body.removeChild(script);
+        delete window[callbackName];
+    };
+    
+    script.src = GOOGLESCRIPTURL + '?action=getQuestions&callback=' + callbackName;
+    document.body.appendChild(script);
+}
 
     function hideAllPages() {
       ["student-info-page", "quiz-page", "completion-page", "admin-login-page", "admin-dashboard"]
