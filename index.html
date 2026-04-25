@@ -6,16 +6,17 @@
     <title>اختبار مادة تقريب القرآن</title>
     <!-- 
       TAQRIB AL-QURAN QUIZ - GOOGLE APPS SCRIPT BACKEND VERSION
-      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets), Admin Panel, Score Chart, Wrong Questions Logging.
+      Features: 30-minute timer, Auto-submit, Central Storage (Google Sheets),
+      Admin Panel, Score Chart, Wrong Questions Logging, Enable/Disable Quiz.
     -->
     <style>
         :root {
-            --primary-color: #2c5f2d; /* Calm Islamic Green */
+            --primary-color: #2c5f2d;
             --secondary-color: #97bc62;
             --bg-color: #f4f7f6;
             --text-color: #333;
             --white: #ffffff;
-            --accent-color: #d4af37; /* Gold accent */
+            --accent-color: #d4af37;
             --error-color: #dc3545;
         }
 
@@ -222,6 +223,24 @@
             font-weight: bold;
         }
 
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-right: 10px;
+        }
+
+        .status-on {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-off {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
         @media (max-width: 600px) {
             .container {
                 width: 95%;
@@ -234,7 +253,6 @@
         }
     </style>
 
-    <!-- Chart.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
@@ -246,29 +264,28 @@
         <button class="btn btn-admin" onclick="showAdminLogin()">لوحة المعلم</button>
     </header>
 
-    <!-- معلومات مدرس الحلقة -->
+    <!-- صفحة معلومات مدرس الحلقة -->
     <div id="student-info-page" class="container">
         <h2>بيانات مدرس الحلقة</h2>
+        <div id="quiz-status-message" class="form-group hidden" style="color: var(--error-color); font-weight: bold;"></div>
         <div class="form-group">
             <label for="student-name">اسم مدرس الحلقة:</label>
             <input type="text" id="student-name" placeholder="أدخل اسمك هنا">
         </div>
-        <button class="btn" onclick="startQuiz()">ابدأ الاختبار</button>
+        <button id="start-quiz-btn" class="btn" onclick="startQuiz()">ابدأ الاختبار</button>
     </div>
 
-    <!-- Quiz Page -->
+    <!-- صفحة الاختبار -->
     <div id="quiz-page" class="container hidden">
         <div id="quiz-timer" class="timer-container">
             الوقت المتبقي: <span id="time-display">30:00</span>
         </div>
         <h2 id="quiz-title">الأسئلة</h2>
-        <div id="questions-container">
-            <!-- Questions will be loaded here via JS -->
-        </div>
+        <div id="questions-container"></div>
         <button id="submit-btn" class="btn" onclick="submitQuiz(false)">إنهاء الاختبار وإرسال الإجابات</button>
     </div>
 
-    <!-- Completion Message -->
+    <!-- صفحة الإكمال -->
     <div id="completion-page" class="container hidden">
         <div style="text-align: center;">
             <h2 id="completion-status" style="color: var(--primary-color);">تم إرسال إجاباتك بنجاح</h2>
@@ -277,7 +294,7 @@
         </div>
     </div>
 
-    <!-- Admin Login -->
+    <!-- صفحة دخول المعلم -->
     <div id="admin-login-page" class="container hidden">
         <h2>دخول المعلم المسؤول</h2>
         <div class="form-group">
@@ -288,8 +305,18 @@
         <button class="btn btn-secondary" onclick="showStudentPage()">رجوع</button>
     </div>
 
-    <!-- Admin Dashboard -->
+    <!-- لوحة المعلم -->
     <div id="admin-dashboard" class="container hidden" style="max-width: 1000px;">
+        <h2>
+            لوحة المعلم
+            <span id="quiz-status-badge" class="status-badge"></span>
+        </h2>
+        <div class="admin-actions">
+            <button id="toggle-quiz-btn" class="btn" onclick="toggleQuizEnabled()">إيقاف الاختبار</button>
+        </div>
+
+        <hr style="margin: 30px 0;">
+
         <h2>إدارة الأسئلة</h2>
         <div style="overflow-x: auto;">
             <table id="questions-table">
@@ -304,9 +331,7 @@
                         <th>حذف</th>
                     </tr>
                 </thead>
-                <tbody id="admin-questions-body">
-                    <!-- Questions for editing -->
-                </tbody>
+                <tbody id="admin-questions-body"></tbody>
             </table>
         </div>
         <div class="admin-actions">
@@ -339,9 +364,7 @@
                         <th>وقت الانتهاء</th>
                     </tr>
                 </thead>
-                <tbody id="results-body">
-                    <!-- Results will appear here -->
-                </tbody>
+                <tbody id="results-body"></tbody>
             </table>
         </div>
 
@@ -357,11 +380,8 @@
             </div>
             <button class="btn" onclick="loadTeacherWrongQuestions()">عرض الأخطاء لهذا المدرس</button>
         </div>
-        <div id="teacher-wrong-questions" style="margin-top: 15px;">
-            <!-- سيتم عرض الأسئلة الخاطئة هنا -->
-        </div>
+        <div id="teacher-wrong-questions" style="margin-top: 15px;"></div>
 
-        <!-- رسم بياني لتوزيع الدرجات -->
         <h2 style="margin-top: 30px;">رسم بياني لدرجات المدرسين</h2>
         <canvas id="scoresChart" style="max-width: 800px; margin: 20px auto;"></canvas>
 
@@ -370,39 +390,109 @@
     </div>
 
     <script>
-        // --- Global Configuration ---
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp0dWXIpkXN0cG1tEIJ4r6c63rLF2IrHLdwbEaMpFQDZHQVQEk8MDr6Z9ZjAb1_aoQnw/exec";
         const ADMIN_PASSWORD = "98989898";
-        const QUIZ_DURATION_SECONDS = 30 * 60; // 30 دقيقة
+        const QUIZ_DURATION_SECONDS = 30 * 60;
         const STORAGE_KEY_START_TIME = "taqrib_quiz_start_time";
 
-        // --- Data & State ---
         let questions = [];
         let results = [];
-        
-        // Timer Variables
         let timerInterval;
         let timeLeft = QUIZ_DURATION_SECONDS;
         let startTimeStr = "";
         let currentStudentName = "";
         let isSubmitted = false;
-
-        // Chart instance
         let scoresChartInstance = null;
+        let quizEnabled = true;
 
-        // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
             loadQuestionsFromCloud();
         });
 
-        // --- Loading Overlay Helper ---
         function toggleLoading(show) {
             const overlay = document.getElementById('loading-overlay');
             if (show) overlay.classList.remove('hidden');
             else overlay.classList.add('hidden');
         }
 
-        // --- Cloud Integration: Load Questions ---
+        // --- Load settings (quizEnabled) ---
+        function loadSettings() {
+            fetch(`${GOOGLE_SCRIPT_URL}?action=getSettings`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success' && data.settings) {
+                        quizEnabled = !!data.settings.quizEnabled;
+                    } else {
+                        quizEnabled = true;
+                    }
+                    updateQuizStatusUI();
+                })
+                .catch(() => {
+                    quizEnabled = true;
+                    updateQuizStatusUI();
+                });
+        }
+
+        function updateQuizStatusUI() {
+            const badge = document.getElementById('quiz-status-badge');
+            const toggleBtn = document.getElementById('toggle-quiz-btn');
+            const statusMsg = document.getElementById('quiz-status-message');
+            const startBtn = document.getElementById('start-quiz-btn');
+
+            if (badge) {
+                if (quizEnabled) {
+                    badge.textContent = "الاختبار مفعل";
+                    badge.classList.remove('status-off');
+                    badge.classList.add('status-on');
+                } else {
+                    badge.textContent = "الاختبار متوقف";
+                    badge.classList.remove('status-on');
+                    badge.classList.add('status-off');
+                }
+            }
+
+            if (toggleBtn) {
+                toggleBtn.textContent = quizEnabled ? "إيقاف الاختبار" : "تشغيل الاختبار";
+            }
+
+            if (statusMsg && startBtn) {
+                if (!quizEnabled) {
+                    statusMsg.textContent = "الاختبار متوقف حاليًا، يرجى مراجعة المعلم المسؤول.";
+                    statusMsg.classList.remove('hidden');
+                    startBtn.disabled = true;
+                } else {
+                    statusMsg.textContent = "";
+                    statusMsg.classList.add('hidden');
+                    startBtn.disabled = false;
+                }
+            }
+        }
+
+        function toggleQuizEnabled() {
+            const newState = !quizEnabled;
+            toggleLoading(true);
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "setQuizEnabled",
+                    enabled: newState
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success' && data.settings) {
+                    quizEnabled = !!data.settings.quizEnabled;
+                    updateQuizStatusUI();
+                } else {
+                    alert("تعذر تغيير حالة الاختبار.");
+                }
+            })
+            .catch(() => alert("حدث خطأ أثناء تغيير حالة الاختبار."))
+            .finally(() => toggleLoading(false));
+        }
+
         function loadQuestionsFromCloud() {
             toggleLoading(true);
             fetch(`${GOOGLE_SCRIPT_URL}?action=getQuestions`)
@@ -411,20 +501,24 @@
                     if (data.status === 'success' && data.questions) {
                         questions = data.questions;
                         console.log("Questions loaded from cloud:", questions);
+                    } else if (data.message === 'quiz_disabled') {
+                        quizEnabled = false;
+                        updateQuizStatusUI();
                     } else {
                         throw new Error("Failed to load questions");
                     }
                 })
                 .catch(error => {
                     console.error("Error loading questions:", error);
-                    alert("تعذر تحميل الأسئلة من الخادم، يرجى مراجعة المعلم.");
+                    if (quizEnabled) {
+                        alert("تعذر تحميل الأسئلة من الخادم، يرجى مراجعة المعلم.");
+                    }
                 })
                 .finally(() => {
                     toggleLoading(false);
                 });
         }
 
-        // --- Navigation ---
         function hideAllPages() {
             ['student-info-page', 'quiz-page', 'completion-page', 'admin-login-page', 'admin-dashboard']
                 .forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -433,6 +527,7 @@
         function showStudentPage() {
             hideAllPages();
             document.getElementById('student-info-page').classList.remove('hidden');
+            loadSettings();
         }
 
         function showAdminLogin() {
@@ -440,7 +535,6 @@
             document.getElementById('admin-login-page').classList.remove('hidden');
         }
 
-        // --- Helper: Format Timestamp ---
         function getTimestamp() {
             const now = new Date();
             const y = now.getFullYear();
@@ -452,12 +546,9 @@
             return `${y}-${m}-${d} ${h}:${min}:${s}`;
         }
 
-        // --- Helper: Timer from persistent start time ---
         function calculateTimeLeftFromStorage() {
             const storedStart = localStorage.getItem(STORAGE_KEY_START_TIME);
-            if (!storedStart) {
-                return QUIZ_DURATION_SECONDS;
-            }
+            if (!storedStart) return QUIZ_DURATION_SECONDS;
             const startTimeMs = parseInt(storedStart, 10);
             const now = Date.now();
             const elapsedSeconds = Math.floor((now - startTimeMs) / 1000);
@@ -465,8 +556,12 @@
             return remaining > 0 ? remaining : 0;
         }
 
-        // --- Student Logic ---
         function startQuiz() {
+            if (!quizEnabled) {
+                alert("الاختبار متوقف حاليًا، لا يمكن البدء.");
+                return;
+            }
+
             const nameInput = document.getElementById('student-name');
             const name = nameInput.value.trim();
 
@@ -552,17 +647,31 @@
             labels.forEach(label => label.classList.add('locked'));
         }
 
-        // --- Submit Quiz: حساب النتيجة + إرسال قائمة الأسئلة الخاطئة للخادم ---
+        // Submit quiz with validation (all questions answered) + wrong questions logging
         function submitQuiz(isAuto) {
             if (isSubmitted) return;
+
+            const totalQuestions = questions.length;
+
+            // تحقق من الأسئلة غير المجابة (للإرسال اليدوي فقط)
+            if (!isAuto) {
+                let unanswered = 0;
+                for (let i = 0; i < totalQuestions; i++) {
+                    const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (!selected) unanswered++;
+                }
+                if (unanswered > 0) {
+                    alert(`لم تجب على ${unanswered} سؤال/أسئلة. يرجى الإجابة على جميع الأسئلة قبل إرسال الاختبار.`);
+                    return;
+                }
+            }
+
             isSubmitted = true;
             if (timerInterval) clearInterval(timerInterval);
 
             const endTimeStr = getTimestamp();
             let correctCount = 0;
-            const totalQuestions = questions.length;
 
-            // مصفوفة لتجميع أرقام ونصوص الأسئلة الخاطئة فقط (لا نعرضها للمدرس هنا)
             const wrongQuestions = [];
 
             for (let i = 0; i < totalQuestions; i++) {
@@ -593,7 +702,6 @@
             const resultText =
                 `درجتك: ${resultEntry.score}% (الإجابات الصحيحة: ${resultEntry.correct} من ${resultEntry.total})`;
 
-            // إرسال النتيجة + قائمة الأسئلة الخاطئة إلى الخادم
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 mode: 'no-cors',
@@ -630,7 +738,7 @@
             }, 800);
         }
 
-        // --- Admin Logic ---
+        // Admin logic
         function checkAdminPassword() {
             const pass = document.getElementById('admin-password').value;
             if (pass === ADMIN_PASSWORD) {
@@ -638,6 +746,7 @@
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 renderAdminQuestions();
                 loadResultsFromCloud();
+                loadSettings();
                 document.getElementById('admin-password').value = '';
             } else {
                 alert("كلمة المرور غير صحيحة!");
@@ -684,7 +793,6 @@
             addQuestionRow();
         }
 
-        // --- Cloud Integration: Save Questions ---
         function saveQuestionsToCloud() {
             const rows = document.querySelectorAll('#admin-questions-body tr');
             const newQuestions = [];
@@ -721,7 +829,6 @@
             });
         }
 
-        // --- Cloud Integration: Load Results ---
         function loadResultsFromCloud() {
             toggleLoading(true);
             fetch(`${GOOGLE_SCRIPT_URL}?action=getResults`)
@@ -755,7 +862,6 @@
             });
         }
 
-        // --- Render Scores Chart (Chart.js) ---
         function renderScoresChart() {
             const canvas = document.getElementById('scoresChart');
             if (!canvas) return;
@@ -786,27 +892,17 @@
                     indexAxis: 'x',
                     responsive: true,
                     plugins: {
-                        legend: {
-                            display: true
-                        },
-                        tooltip: {
-                            rtl: true
-                        }
+                        legend: { display: true },
+                        tooltip: { rtl: true }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             max: 100,
-                            title: {
-                                display: true,
-                                text: 'النسبة المئوية'
-                            }
+                            title: { display: true, text: 'النسبة المئوية' }
                         },
                         x: {
-                            title: {
-                                display: true,
-                                text: 'مدرسو الحلقات'
-                            }
+                            title: { display: true, text: 'مدرسو الحلقات' }
                         }
                     }
                 }
@@ -867,7 +963,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // تعبئة قائمة أسماء المدرسين في select
         function populateTeacherFilter() {
             const select = document.getElementById('teacher-name-filter');
             if (!select) return;
@@ -894,14 +989,12 @@
             }
         }
 
-        // تعديل renderAdminResults لاستدعاء populateTeacherFilter بعد تحميل النتائج
         const _originalRenderAdminResults = renderAdminResults;
         renderAdminResults = function() {
             _originalRenderAdminResults();
             populateTeacherFilter();
         };
 
-        // تحميل الأخطاء لمعلم معيّن وعرضها
         function loadTeacherWrongQuestions() {
             const select = document.getElementById('teacher-name-filter');
             const teacherName = select ? select.value : '';
@@ -940,7 +1033,6 @@
                 });
         }
 
-        // تصدير كل الأخطاء لكل المدرسين إلى CSV مستقل
         function exportAllWrongQuestionsToCSV() {
             toggleLoading(true);
             fetch(`${GOOGLE_SCRIPT_URL}?action=getAllWrongQuestions`)
